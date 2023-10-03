@@ -1,12 +1,10 @@
 version: "3.3"
 services:
   ibc0:
-    build: ./besu
+    build: ./geth.00
     ports:
       - 8645:8545
-      - 8646:8546
   ibc1:
-    build: ./geth
+    build: ./geth.01
     ports:
-      - 8745:8545
-      - 8746:8546
+      - 8646:8546

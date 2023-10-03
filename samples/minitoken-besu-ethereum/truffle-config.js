@@ -61,10 +61,10 @@ module.exports = {
     },
     ibc1: {
       host: "127.0.0.1", // Localhost (default: none)
-      port: 8745, // Standard Ethereum port (default: none)
+      port: 8646, // Standard Ethereum port (default: none)
       network_id: "*", // Any network (default: none)
       provider: () =>
-        new HDWalletProvider(mnemonic, "http://localhost:8745", 0, 10),
+        new HDWalletProvider(mnemonic, "http://localhost:8646", 0, 10),
     },
   },
 
