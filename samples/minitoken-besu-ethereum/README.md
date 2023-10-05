@@ -26,10 +26,11 @@ Client: Docker Engine - Community
 Also getting [nvm](https://github.com/nvm-sh/nvm) will make easier to get a `node` and `npm` tested for local deploy. In this example, the lastest node version works fine:
 
 ```
+$ nvm install --lts
 $ node -v
-v20.7.0
+v18.18.0
 $ npm -v
-10.1.0
+9.8.1
 ```
 
 After that, execute `npm install` in the following directories.
