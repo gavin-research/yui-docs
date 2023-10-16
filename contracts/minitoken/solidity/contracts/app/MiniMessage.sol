@@ -5,7 +5,7 @@ import "@hyperledger-labs/yui-ibc-solidity/contracts/core/OwnableIBCHandler.sol"
 import "solidity-bytes-utils/contracts/BytesLib.sol";
 import "../lib/Packet.sol";
 
-contract MiniToken is IIBCModule {
+contract MiniMessage is IIBCModule {
     IBCHandler ibcHandler;
 
     using BytesLib for *;
@@ -47,17 +47,17 @@ contract MiniToken is IIBCModule {
     }
 
     function sendTransfer(
-        uint64 amount,
+        string message,
         address receiver,
         string calldata sourcePort,
         string calldata sourceChannel,
         uint64 timeoutHeight
     ) external {
-        require(_burn(msg.sender, amount), "MiniToken: failed to burn");
+        require(_burn(msg.sender, message), "MiniToken: failed to transfer");
 
         _sendPacket(
             MiniTokenPacketData.Data({
-                amount: amount,
+                message: message,
                 sender: abi.encodePacked(msg.sender),
                 receiver: abi.encodePacked(receiver)
             }),
@@ -71,7 +71,7 @@ contract MiniToken is IIBCModule {
             sourcePort,
             sourceChannel,
             timeoutHeight,
-            amount
+            message
         );
     }
 

@@ -8,3 +8,11 @@ services:
     build: ./geth.01
     ports:
       - 8646:8546
+  remix-ide0:
+    ports:
+      - 8045:80
+    image: 'remixproject/remix-ide:remix_live'
+  remix-ide1:
+    ports:
+      - 8046:80
+    image: 'remixproject/remix-ide:remix_live'
