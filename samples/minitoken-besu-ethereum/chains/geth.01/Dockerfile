@@ -9,7 +9,7 @@ RUN /usr/local/bin/geth --nousb --datadir /root/.ethereum init /root/genesis.jso
 
 RUN /usr/local/bin/geth --nousb account import --password /root/geth.password /root/privatekey
 
-EXPOSE 8546
+EXPOSE 8545
 
 ENTRYPOINT ["/run.sh"]
 CMD ["--verbosity", "5", "--vmdebug"]

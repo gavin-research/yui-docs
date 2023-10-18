@@ -7,4 +7,4 @@ services:
   ibc1:
     build: ./geth.01
     ports:
-      - 8646:8546
+      - 8646:8545
