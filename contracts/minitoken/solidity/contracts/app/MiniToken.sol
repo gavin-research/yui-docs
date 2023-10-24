@@ -5,7 +5,7 @@ import "@hyperledger-labs/yui-ibc-solidity/contracts/core/OwnableIBCHandler.sol"
 import "solidity-bytes-utils/contracts/BytesLib.sol";
 import "../lib/Packet.sol";
 
-contract MiniToken is IIBCModule {
+contract MiniMessage is IIBCModule {
     IBCHandler ibcHandler;
 
     using BytesLib for *;
@@ -18,11 +18,11 @@ contract MiniToken is IIBCModule {
         ibcHandler = ibcHandler_;
     }
 
-    event Mint(address indexed to, uint256 amount);
+    event Mint(address indexed to, string message);
 
-    event Burn(address indexed from, uint256 amount);
+    event Burn(address indexed from, string message);
 
-    event Transfer(address indexed from, address indexed to, uint256 amount);
+    event Transfer(address indexed from, address indexed to, string message);
 
     event SendTransfer(
         address indexed from,
@@ -30,34 +30,34 @@ contract MiniToken is IIBCModule {
         string sourcePort,
         string sourceChannel,
         uint64 timeoutHeight,
-        uint256 amount
+        string message
     );
 
     modifier onlyOwner() {
-        require(msg.sender == owner, "MiniToken: caller is not the owner");
+        require(msg.sender == owner, "MiniMessage: caller is not the owner");
         _;
     }
 
     modifier onlyIBC() {
         require(
             msg.sender == address(ibcHandler),
-            "MiniToken: caller is not the ibcHandler"
+            "MiniMessage: caller is not the ibcHandler"
         );
         _;
     }
 
     function sendTransfer(
-        uint64 amount,
+        string memory message,
         address receiver,
         string calldata sourcePort,
         string calldata sourceChannel,
         uint64 timeoutHeight
     ) external {
-        require(_burn(msg.sender, amount), "MiniToken: failed to burn");
+        //require(_burn(msg.sender, message), "MiniMessage: failed to burn");
 
         _sendPacket(
-            MiniTokenPacketData.Data({
-                amount: amount,
+            MiniMessagePacketData.Data({
+                message: message,
                 sender: abi.encodePacked(msg.sender),
                 receiver: abi.encodePacked(receiver)
             }),
@@ -71,58 +71,54 @@ contract MiniToken is IIBCModule {
             sourcePort,
             sourceChannel,
             timeoutHeight,
-            amount
+            message
         );
     }
 
-    mapping(address => uint256) private _balances;
+    mapping(address => string) private _mensajin;
 
-    function mint(address account, uint256 amount) external onlyOwner {
-        require(_mint(account, amount));
+    function mint(address account, string memory message) external onlyOwner {
+        require(_mint(account, message));
     }
 
-    function burn(uint256 amount) external {
-        require(_burn(msg.sender, amount), "MiniToken: failed to burn");
+    function burn(string memory message) external {
+        require(_burn(msg.sender, message), "MiniMessage: failed to burn");
     }
 
-    function transfer(address to, uint256 amount) external {
+    function transfer(address to, string memory message) external {
         bool res;
-        string memory message;
-        (res, message) = _transfer(msg.sender, to, amount);
-        require(res, message);
+        string memory mssg;
+        (res, mssg) = _transfer(msg.sender, to, message);
+        require(res, mssg);
     }
 
-    function balanceOf(address account) public view returns (uint256) {
-        return _balances[account];
+    function balanceOf(address account) public view returns (string memory) {
+        return _mensajin[account];
     }
 
-    function _mint(address account, uint256 amount) internal returns (bool) {
-        _balances[account] += amount;
-        emit Mint(account, amount);
+    function _mint(address account, string memory message) internal returns (bool) {
+        _mensajin[account] = message; //cacnea
+        emit Mint(account, message);
         return true;
     }
 
-    function _burn(address account, uint256 amount) internal returns (bool) {
-        uint256 accountBalance = _balances[account];
-        if (accountBalance < amount) {
-            return false;
-        }
-        _balances[account] = accountBalance - amount;
-        emit Burn(account, amount);
+    function _burn(address account, string memory message) internal returns (bool) {        
+       // _mensajin[account] = "";
+        emit Burn(account, message);
         return true;
     }
 
-    function _transfer(
+    function _transfer( //cacnea
         address from,
         address to,
-        uint256 amount
+        string memory message
     ) internal returns (bool, string memory) {
-        if (_balances[from] >= amount) {
-            return (false, "MiniToken: amount shortage");
+        if (keccak256(abi.encodePacked(_mensajin[from] )) != keccak256(abi.encodePacked(message))) {
+            return (false, "MiniMessage: Ese mensajin no esta");
         }
-        _balances[from] -= amount;
-        _balances[to] += amount;
-        emit Transfer(from, to, amount);
+        _mensajin[from] = "";
+        _mensajin[to] = message;
+        emit Transfer(from, to, message);
         return (true, "");
     }
 
@@ -135,11 +131,11 @@ contract MiniToken is IIBCModule {
         onlyIBC
         returns (bytes memory acknowledgement)
     {
-        MiniTokenPacketData.Data memory data = MiniTokenPacketData.decode(
+        MiniMessagePacketData.Data memory data = MiniMessagePacketData.decode(
             packet.data
         );
         return
-            _newAcknowledgement(_mint(data.receiver.toAddress(0), data.amount));
+            _newAcknowledgement(_mint(data.receiver.toAddress(0), data.message));
     }
 
     function onAcknowledgementPacket(
@@ -148,7 +144,7 @@ contract MiniToken is IIBCModule {
         address relayer
     ) external virtual override onlyIBC {
         if (!_isSuccessAcknowledgement(acknowledgement)) {
-            _refundTokens(MiniTokenPacketData.decode(packet.data));
+            _refundTokens(MiniMessagePacketData.decode(packet.data));
         }
     }
 
@@ -195,7 +191,7 @@ contract MiniToken is IIBCModule {
     // Internal Functions //
 
     function _sendPacket(
-        MiniTokenPacketData.Data memory data,
+        MiniMessagePacketData.Data memory data, //cacnea cacturne
         string memory sourcePort,
         string memory sourceChannel,
         uint64 timeoutHeight
@@ -204,7 +200,7 @@ contract MiniToken is IIBCModule {
             sourcePort,
             sourceChannel
         );
-        require(found, "MiniToken: channel not found");
+        require(found, "MiniMessage: channel not found");
         ibcHandler.sendPacket(
             Packet.Data({
                 sequence: ibcHandler.getNextSequenceSend(
@@ -215,7 +211,7 @@ contract MiniToken is IIBCModule {
                 source_channel: sourceChannel,
                 destination_port: channel.counterparty.port_id,
                 destination_channel: channel.counterparty.channel_id,
-                data: MiniTokenPacketData.encode(data),
+                data: MiniMessagePacketData.encode(data),
                 timeout_height: Height.Data({
                     revision_number: 0,
                     revision_height: timeoutHeight
@@ -250,10 +246,10 @@ contract MiniToken is IIBCModule {
         return acknowledgement[0] == 0x01;
     }
 
-    function _refundTokens(MiniTokenPacketData.Data memory data)
+    function _refundTokens(MiniMessagePacketData.Data memory data)
         internal
         virtual
     {
-        require(_mint(data.sender.toAddress(0), data.amount));
+        require(_mint(data.sender.toAddress(0), data.message));
     }
 }

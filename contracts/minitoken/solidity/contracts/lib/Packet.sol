@@ -3,12 +3,12 @@ pragma solidity ^0.8.9;
 import "@hyperledger-labs/yui-ibc-solidity/contracts/proto/ProtoBufRuntime.sol";
 import "@hyperledger-labs/yui-ibc-solidity/contracts/proto/GoogleProtobufAny.sol";
 
-library MiniTokenPacketData {
+library MiniMessagePacketData {
 
 
   //struct definition
   struct Data {
-    uint64 amount;
+    string message;
     bytes sender;
     bytes receiver;
   }
@@ -59,7 +59,7 @@ library MiniTokenPacketData {
       (fieldId, wireType, bytesRead) = ProtoBufRuntime._decode_key(pointer, bs);
       pointer += bytesRead;
       if (fieldId == 1) {
-        pointer += _read_amount(pointer, bs, r);
+        pointer += _read_message(pointer, bs, r);
       } else
       if (fieldId == 2) {
         pointer += _read_sender(pointer, bs, r);
@@ -84,13 +84,13 @@ library MiniTokenPacketData {
    * @param r The in-memory struct
    * @return The number of bytes decoded
    */
-  function _read_amount(
+  function _read_message(
     uint256 p,
     bytes memory bs,
     Data memory r
   ) internal pure returns (uint) {
-    (uint64 x, uint256 sz) = ProtoBufRuntime._decode_uint64(p, bs);
-    r.amount = x;
+    (string memory x, uint256 sz) = ProtoBufRuntime._decode_string(p, bs);
+    r.message = x;
     return sz;
   }
 
@@ -161,14 +161,14 @@ library MiniTokenPacketData {
     uint256 offset = p;
     uint256 pointer = p;
     
-    if (r.amount != 0) {
+    if (keccak256(abi.encodePacked(r.message)) != keccak256(abi.encodePacked(""))) {
     pointer += ProtoBufRuntime._encode_key(
       1,
       ProtoBufRuntime.WireType.Varint,
       pointer,
       bs
     );
-    pointer += ProtoBufRuntime._encode_uint64(r.amount, pointer, bs);
+    pointer += ProtoBufRuntime._encode_string(r.message, pointer, bs);
     }
     if (r.sender.length != 0) {
     pointer += ProtoBufRuntime._encode_key(
@@ -231,7 +231,7 @@ library MiniTokenPacketData {
     Data memory r
   ) internal pure returns (uint) {
     uint256 e;
-    e += 1 + ProtoBufRuntime._sz_uint64(r.amount);
+    e += 1 + ProtoBufRuntime._sz_lendelim(bytes(r.message).length);
     e += 1 + ProtoBufRuntime._sz_lendelim(r.sender.length);
     e += 1 + ProtoBufRuntime._sz_lendelim(r.receiver.length);
     return e;
@@ -242,7 +242,7 @@ library MiniTokenPacketData {
     Data memory r
   ) internal pure returns (bool) {
     
-  if (r.amount != 0) {
+  if (keccak256(abi.encodePacked(r.message)) != keccak256(abi.encodePacked(""))) {
     return false;
   }
 
@@ -265,7 +265,7 @@ library MiniTokenPacketData {
    * @param output The in-storage struct
    */
   function store(Data memory input, Data storage output) internal {
-    output.amount = input.amount;
+    output.message = input.message;
     output.sender = input.sender;
     output.receiver = input.receiver;
 

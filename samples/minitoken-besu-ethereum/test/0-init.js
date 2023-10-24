@@ -1,14 +1,15 @@
-const MiniToken = artifacts.require("MiniToken");
+const MiniMessage = artifacts.require("MiniMessage");
 
 module.exports = async (callback) => {
   const accounts = await web3.eth.getAccounts();
   const alice = accounts[1];
-  const mintAmount = 100;
+  const mensajillo = "cacnea";
 
-  const miniToken = await MiniToken.deployed();
+  const miniMessage = await MiniMessage.deployed();
   const block = await web3.eth.getBlockNumber();
-  await miniToken.mint(alice, mintAmount);
-  const mintEvent = await miniToken.getPastEvents("Mint", { fromBlock: block });
+
+  await miniMessage.mint(alice, mensajillo);
+  const mintEvent = await miniMessage.getPastEvents("Mint", { fromBlock: block });
   console.log(mintEvent);
 
   callback();

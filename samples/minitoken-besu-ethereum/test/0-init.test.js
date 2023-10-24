@@ -1,10 +1,10 @@
-const MiniToken = artifacts.require("MiniToken");
+const MiniMessage = artifacts.require("MiniMessage");
 
-contract("MiniToken", (accounts) => {
-  it("should put 100 MiniToken in Alice account on ibc0", () =>
-    MiniToken.deployed()
+contract("MiniMessage", (accounts) => {
+  it("Alice should have a cacnea on ibc0", () =>
+  MiniMessage.deployed()
       .then((instance) => instance.balanceOf(accounts[1]))
-      .then((balance) => {
-        assert.equal(balance.valueOf(), 100, "100 wasn't in Alice account");
+      .then((mensajin) => {
+        assert.equal(mensajin.valueOf(), "cacnea", "cacnea wasn't in Alice account");
       }));
 });
