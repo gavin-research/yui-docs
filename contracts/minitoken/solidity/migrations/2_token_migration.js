@@ -1,4 +1,4 @@
-const MiniToken = artifacts.require("MiniToken");
+const MiniToken = artifacts.require("MiniMessage");
 const IBCClient = artifacts.require("@hyperledger-labs/yui-ibc-solidity/IBCClient");
 const IBCConnection = artifacts.require("@hyperledger-labs/yui-ibc-solidity/IBCConnection");
 const IBCChannelHandshake = artifacts.require("@hyperledger-labs/yui-ibc-solidity/IBCChannelHandshake");

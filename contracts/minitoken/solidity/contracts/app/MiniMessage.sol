@@ -3,7 +3,7 @@ pragma solidity ^0.8.9;
 
 import "@hyperledger-labs/yui-ibc-solidity/contracts/core/OwnableIBCHandler.sol";
 import "solidity-bytes-utils/contracts/BytesLib.sol";
-import "../lib/Packet.sol";
+import "../lib/PacketMssg.sol";
 
 contract MiniMessage is IIBCModule {
     IBCHandler ibcHandler;
