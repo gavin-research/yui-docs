@@ -1,4 +1,5 @@
-const MiniToken = artifacts.require("MiniToken");
+//const MiniToken = artifacts.require("MiniToken");
+const MiniMessage = artifacts.require("MiniMessage");
 const IBCClient = artifacts.require("@hyperledger-labs/yui-ibc-solidity/IBCClient");
 const IBCConnection = artifacts.require("@hyperledger-labs/yui-ibc-solidity/IBCConnection");
 const IBCChannelHandshake = artifacts.require("@hyperledger-labs/yui-ibc-solidity/IBCChannelHandshake");
@@ -20,14 +21,16 @@ const deployCore = async (deployer) => {
 };
 
 const deployApp = async (deployer) => {
-  await deployer.deploy(MiniToken, IBCHandler.address);
+  //await deployer.deploy(MiniToken, IBCHandler.address);
+  await deployer.deploy(MiniMessage, IBCHandler.address);
 };
 
 const init = async (deployer) => {
   const ibcHandler = await IBCHandler.deployed();
 
   for(const promise of [
-    () => ibcHandler.bindPort(PortTransfer, MiniToken.address),
+    //() => ibcHandler.bindPort(PortTransfer, MiniToken.address),
+    () => ibcHandler.bindPort(PortTransfer, MiniMessage.address),
     () => ibcHandler.registerClient(MockClientType, MockClient.address),
   ]) {
     const result = await promise();
