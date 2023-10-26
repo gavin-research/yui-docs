@@ -36,15 +36,29 @@ $ npm -v
 After that, execute `npm install` in the following directories.
 
 - contracts/minitoken/solidity
+
+In case using also Besu as client, it's also necesary compile this script:
+
 - samples/minitoken-besu-ethereum (in this case, `postinstall` parameter in package.json finish the installation with `npm run compile:ibc`)
+
+Also this module is needed:
+
+```
+$ npm install @truffle/hdwallet-provider -g
+```
 
 # Setup
 
 The following will start the ledger, deploy the contract, and establish the channel with a relayer:
 
 ```
+make setup
+```
+... or execute this step-by-step guide:
+
+```
 make build
-make network (it takes about 30 seconds to get up both ledgers)
+make network
 make migrate
 make handshake
 make relayer-start
@@ -60,7 +74,17 @@ Perform E2E test to transfer MiniToken between ledgers:
 ```
 make e2e
 ```
+... or execute this step-by-step guide:
 
+```
+$ truffle exec test/0-init.js --network=ibc0 
+$ truffle test test/0-init.test.js --network=ibc0 --compile-none --migrate-none
+$ truffle exec test/1-send.js --network=ibc0
+$ truffle test test/1-send.test.js --network=ibc0 --compile-none --migrate-none
+$ truffle test test/2-ibc1.test.js --network=ibc1 --compile-none --migrate-none
+$ truffle test test/3-ibc0.test.js --network=ibc0 --compile-none --migrate-none
+
+```
 # Clean Up
 
 Stop the ledger and Relayer:
