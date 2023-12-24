@@ -13,7 +13,7 @@ module.exports = async (callback) => {
 
   const miniMessage = await MiniMessage.deployed();
   console.log("GROUDON");
-  await miniMessage.sendTransfer(sendAmount, bob, port, channel, timeoutHeight, {
+  await miniMessage.sendTransfer(sendAmount, alice, port, channel, timeoutHeight, {
     from: alice,
   });
   console.log("combusken");

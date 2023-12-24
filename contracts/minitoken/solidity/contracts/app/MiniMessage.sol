@@ -4,7 +4,7 @@ pragma solidity ^0.8.9;
 import "@hyperledger-labs/yui-ibc-solidity/contracts/core/OwnableIBCHandler.sol";
 import "solidity-bytes-utils/contracts/BytesLib.sol";
 import "../lib/PacketMssg.sol";
-
+//noivern
 contract MiniMessage is IIBCModule {
     IBCHandler ibcHandler;
 
@@ -19,6 +19,8 @@ contract MiniMessage is IIBCModule {
     }
 
     event Mint(address indexed to, string message);
+
+    event Cacneacall(address indexed to, string message);
 
     event Burn(address indexed from, string message);
 
@@ -53,11 +55,11 @@ contract MiniMessage is IIBCModule {
         string calldata sourceChannel,
         uint64 timeoutHeight
     ) external {
-        require(_burn(msg.sender, message), "MiniMessage: failed to burn");
+        //require(_burn(msg.sender, message), "MiniMessage: failed to burn");
 
         _sendPacket(
             MiniMessagePacketData.Data({
-                message: message,
+                message: message, //probar a meter aqui el delegate call como mensaje y que en receive lo ejecuto cosa.message
                 sender: abi.encodePacked(msg.sender),
                 receiver: abi.encodePacked(receiver)
             }),
@@ -75,11 +77,43 @@ contract MiniMessage is IIBCModule {
         );
     }
 
+    function sendTransfer2(
+        string memory message,
+        address receiver,
+        string memory sourcePort,
+        string memory sourceChannel,
+        uint64 timeoutHeight
+    ) internal {
+       // require(_burn(msg.sender, message), "MiniMessage: failed to burn");
+
+        _sendPacket(
+            MiniMessagePacketData.Data({
+                message: message, //probar a meter aqui el delegate call como mensaje y que en receive lo ejecuto cosa.message
+                sender: abi.encodePacked("0xcBED645B1C1a6254f1149Df51d3591c6B3803007"),
+                receiver: abi.encodePacked(receiver)
+            }),
+            sourcePort,
+            sourceChannel,
+            timeoutHeight
+        );
+        emit SendTransfer(
+            msg.sender,
+            receiver,
+            sourcePort,
+            sourceChannel,
+            timeoutHeight,
+            message
+        );
+    }
+
+
     mapping(address => string) private _mensajin;
 
     function mint(address account, string memory message) external onlyOwner {
         require(_mint(account, message));
     }
+
+    
 
     function burn(string memory message) external {
         require(_burn(msg.sender, message), "MiniMessage: failed to burn");
@@ -100,6 +134,30 @@ contract MiniMessage is IIBCModule {
         _mensajin[account] = message; //cacnea
         emit Mint(account, message);
         return true;
+    }
+
+    function _cacneacall(bytes memory _mssg) internal returns (string memory) {
+        (address account, string memory message_s) = abi.decode(_mssg, (address, string));
+
+        //string memory xana = string(abi.encodePacked(account));
+        //caso del envio; caso del sendtransfer2 que guarda cacturne, caso patata
+        if(keccak256(abi.encodePacked(message_s)) == keccak256(abi.encodePacked("cacnea"))){
+            _mensajin[account] = "hecho";
+            
+            sendTransfer2("cacturne", account, "transfer", "channel-0", 0);
+
+        }else if(keccak256(abi.encodePacked(message_s)) == keccak256(abi.encodePacked("cacturne"))){
+            _mensajin[account] = message_s;
+        }else{
+            _mensajin[account] = "no";
+
+        emit Burn(account, "hola");
+        }
+
+        emit Cacneacall(account, message_s);
+
+        
+        return "cacturne";
     }
 
     function _burn(address account, string memory message) internal returns (bool) {        
@@ -124,6 +182,7 @@ contract MiniMessage is IIBCModule {
 
     /// Module callbacks ///
 
+//cacnea lo que delegatecall es el _mint ?
     function onRecvPacket(Packet.Data calldata packet, address relayer)
         external
         virtual
@@ -134,8 +193,20 @@ contract MiniMessage is IIBCModule {
         MiniMessagePacketData.Data memory data = MiniMessagePacketData.decode(
             packet.data
         );
-        return
-            _newAcknowledgement(_mint(data.receiver.toAddress(0), data.message));
+        //(address sendercontrato, string memory mensajillo) = abi.decode(data.message, (address, string));
+        bytes memory message_s = abi.encode(data.receiver.toAddress(0), data.message); //aqui mandaria mensajillo en vez de data.message 
+        
+        string memory respuesta = _cacneacall(message_s);
+        
+        bool buleano = false;
+
+        if(keccak256(abi.encodePacked((respuesta))) == keccak256(abi.encodePacked(("cacturne")))){
+            buleano = true;
+        }else{
+            buleano = true;
+        }
+        return(_newAcknowledgement(buleano));
+            //_newAcknowledgement(_cacneacall(data.receiver.toAddress(0), data.message));
     }
 
     function onAcknowledgementPacket(
