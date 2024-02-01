@@ -48,6 +48,23 @@ contract MiniMessage is IIBCModule {
         _;
     }
 
+
+    //La funcion aparece 2 veces (sendTransfer y sendTransfer2), 
+    //una interna y otra externa, copiada para facilitar la visualizacion ahora mismo.
+
+    //Lo suyo seria que la blockchain A que siempre va a enviar tenga la funcion externa y
+    //la blockchain B que recibe datos, la interna. 
+    //Esto es porque la A envia y es invocada desde fuera la funcion por un user 
+    //o contrato, y en B es un "ejecutable" que se activan el momento en el que B recibe
+    //un codigo valido asociado a un valor, que seria el solicitado desde A
+    
+    //sendTransfer contiene:
+    // el mensaje: un string desde la version anterior
+    // una address, del receptor. Aqui la address es la del usuario que recibe el mensaje. 
+    //     En este caso es todo el rato la misma cuenta, "alice" en los tests.
+    //     Esto es porque es el sender y el receiver, envia la solicitud con el codigo y ha de
+    //     de recibir luego el dato solicitado
+    //
     function sendTransfer(
         string memory message,
         address receiver,
@@ -59,7 +76,7 @@ contract MiniMessage is IIBCModule {
 
         _sendPacket(
             MiniMessagePacketData.Data({
-                message: message, //probar a meter aqui el delegate call como mensaje y que en receive lo ejecuto cosa.message
+                message: message, 
                 sender: abi.encodePacked(msg.sender),
                 receiver: abi.encodePacked(receiver)
             }),
@@ -88,7 +105,7 @@ contract MiniMessage is IIBCModule {
 
         _sendPacket(
             MiniMessagePacketData.Data({
-                message: message, //probar a meter aqui el delegate call como mensaje y que en receive lo ejecuto cosa.message
+                message: message, 
                 sender: abi.encodePacked("0xcBED645B1C1a6254f1149Df51d3591c6B3803007"),
                 receiver: abi.encodePacked(receiver)
             }),
@@ -114,7 +131,8 @@ contract MiniMessage is IIBCModule {
     }
 
     
-
+    //no te preocupes por las funciones de burn, balanceof, mint, no aplican aqui, las conservamos
+    //de cuando se usaba un int, en YUI original minitoken
     function burn(string memory message) external {
         require(_burn(msg.sender, message), "MiniMessage: failed to burn");
     }
@@ -136,18 +154,30 @@ contract MiniMessage is IIBCModule {
         return true;
     }
 
+
+    //funcion que recibe un string, y en caso de que sea el esperado, ejecuta la funcion de envio
+    //con el valor asociado
     function _cacneacall(bytes memory _mssg) internal returns (string memory) {
         (address account, string memory message_s) = abi.decode(_mssg, (address, string));
 
+        //ignorar esta linea
         //string memory xana = string(abi.encodePacked(account));
-        //caso del envio; caso del sendtransfer2 que guarda cacturne, caso patata
+
+        //caso en el que se envia el codigo esperado desde la Blockchain 1 a 2
+        //El codigo es cacnea y ejecuta la funcion de envio de vuelta de 2 a 1 con el dato asociado
+        //a cacnea: cacturne, como respuesta
+
+        //En el caso final aqui accederia al mapping, cacnea seria la clave, el token enviado
+        //y devolveria el valor asociado
         if(keccak256(abi.encodePacked(message_s)) == keccak256(abi.encodePacked("cacnea"))){
             _mensajin[account] = "hecho";
             
             sendTransfer2("cacturne", account, "transfer", "channel-0", 0);
-
+        //caso que se ejecutaria en Blockchain 1, recibe el dato asociado al codigo y lo guarda
+        //aqui esta pre-establecido hard-coded para pruebas y ver que funciona correctamente.
         }else if(keccak256(abi.encodePacked(message_s)) == keccak256(abi.encodePacked("cacturne"))){
             _mensajin[account] = message_s;
+        //caso en el que se recibe cualquier otro dato que no sea el codigo valido
         }else{
             _mensajin[account] = "no";
 
@@ -157,7 +187,7 @@ contract MiniMessage is IIBCModule {
         emit Cacneacall(account, message_s);
 
         
-        return "cacturne";
+        return "cacturne"; //este return esta para comprobaciones, podria devolver un true y ya o nada
     }
 
     function _burn(address account, string memory message) internal returns (bool) {        
@@ -182,7 +212,6 @@ contract MiniMessage is IIBCModule {
 
     /// Module callbacks ///
 
-//cacnea lo que delegatecall es el _mint ?
     function onRecvPacket(Packet.Data calldata packet, address relayer)
         external
         virtual
@@ -196,6 +225,11 @@ contract MiniMessage is IIBCModule {
         //(address sendercontrato, string memory mensajillo) = abi.decode(data.message, (address, string));
         bytes memory message_s = abi.encode(data.receiver.toAddress(0), data.message); //aqui mandaria mensajillo en vez de data.message 
         
+        //en el momento en el que la Blockchain 2 recibe un string, se invoca a cacneacall,
+        //funcion provisional que simplifica el proceso de volver a invocar
+        //la funcion de envio en caso de que haya recibido un codigo correcto
+        //aqui hard-coded como "cacnea"
+
         string memory respuesta = _cacneacall(message_s);
         
         bool buleano = false;
@@ -261,8 +295,16 @@ contract MiniMessage is IIBCModule {
 
     // Internal Functions //
 
+    //Envia un paquete de datos (creado con la libreria PacketMssg)
+    //por el canal especificado hasta la Blockchain B.
+    //El enpaquetado se hace en bytes, la libreria ya la modificamos en el 
+    //"paso anterior" de int a string para que cuente los saltos a dar para 
+    //desenpaquetar correctamente. Es Packetmssg.sol, en ../lib
+
+    //No tienes que preocuparte por canales ni puertos, usamos los 
+    //de serie de YUI original, son muchas librerias y mejor no tocarlo
     function _sendPacket(
-        MiniMessagePacketData.Data memory data, //cacnea cacturne
+        MiniMessagePacketData.Data memory data, 
         string memory sourcePort,
         string memory sourceChannel,
         uint64 timeoutHeight
@@ -317,6 +359,7 @@ contract MiniMessage is IIBCModule {
         return acknowledgement[0] == 0x01;
     }
 
+//no aplica
     function _refundTokens(MiniMessagePacketData.Data memory data)
         internal
         virtual
@@ -324,3 +367,13 @@ contract MiniMessage is IIBCModule {
         require(_mint(data.sender.toAddress(0), data.message));
     }
 }
+
+
+        //Nota Fun Fact:
+        //Cacnea es un Pokemon que evoluciona a Cacturne. Empece a usarlo como mi "to do" en
+        //el TFG para no confundirlo con la palabra todo (all) en espanol.
+        //Evoluciono a meme interno y ahora ya lo meto en todas partes.
+
+        //Aqui seria mas fitting poner un Pokemon que evoluciona por intercambio
+        //por eso de que pasa de una blockchain a otra, como Haunter a Gengar,
+        //pero es lo que hay. Cacnea.
