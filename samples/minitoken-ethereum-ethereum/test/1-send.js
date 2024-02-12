@@ -6,7 +6,7 @@ module.exports = async (callback) => {
   const bob = accounts[2];
 
   const mintAmount = "cacnea";
-  const sendAmount = "cacnea";
+  const sendAmount = "0x05416460deb76d57af601be17e777b93592d8d4d4a4096c57876a91c84f4a712";
   const port = "transfer";
   const channel = "channel-0";
   const timeoutHeight = 0;

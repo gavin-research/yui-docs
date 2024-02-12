@@ -3,17 +3,22 @@ TRUFFLE ?= npx truffle
 TEST_OPTS ?= --compile-none --migrate-none
 
 # setup
-.PHONY: setup down
-setup: build network sleep migrate handshake relayer-start
+.PHONY: setup setup2 down
+setup: build network sleep migrate 
+setup2: build2 sleep migrate2 handshake relayer-start
 
 down: relayer-stop network-down
 
 # build
-.PHONY: build build-contract build-relayer
+.PHONY: build build-contract build-relayer 
 build: build-contract build-relayer build-container
+build2: build-contract2
 
 build-contract:
 	@make -C ../../contracts/minitoken/solidity build
+
+build-contract2:
+	@make -C ../../contracts/minitoken/solidityB2 build2
 
 build-relayer:
 	@make -C relayer build
@@ -33,6 +38,7 @@ network-down:
 .PHONY: migrate
 migrate:
 	npm run migrate:ibc0
+migrate2:
 	npm run migrate:ibc1
 
 # relayer

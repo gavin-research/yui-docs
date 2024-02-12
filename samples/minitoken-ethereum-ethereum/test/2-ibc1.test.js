@@ -5,6 +5,6 @@ contract("MiniMessage", (accounts) => {
   MiniMessage.deployed()
       .then((instance) => instance.balanceOf(accounts[1]))
       .then((mensajin) => {
-        assert.equal(mensajin.valueOf(), "cacturne", "cacturne wasn't in Alice account evolved via Invented-delegatecall");
+        assert.equal(mensajin.valueOf(), "e31822911e580b5ff47d83bebb177a69a78e076baad60a15aac6d4bbb904afc2", "cacturne wasn't in Alice account evolved via Invented-delegatecall");
       }));
 });
