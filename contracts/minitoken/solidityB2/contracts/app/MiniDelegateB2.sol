@@ -14,7 +14,7 @@ contract MiniDelegateB2 is IIBCModule {
 
     mapping (bytes => mapping(address => bool)) public access;
 
-    bytes public cacnea = "0x05416460deb76d57af601be17e777b93592d8d4d4a4096c57876a91c84f4a712";
+    mapping (bytes => string) public certificate;
 
     constructor(IBCHandler ibcHandler_) public {
         owner = msg.sender;
@@ -22,8 +22,13 @@ contract MiniDelegateB2 is IIBCModule {
         ibcHandler = ibcHandler_;
 
         //para pruebas ahora, predeterminado el usuario puede acceder al registro 0x0541...712
-        access[cacnea]
-            [0xcBED645B1C1a6254f1149Df51d3591c6B3803007] = true;
+        certificate["0x05416460deb76d57af601be17e777b93592d8d4d4a4096c57876a91c84f4a712"] = 
+        "e31822911e580b5ff47d83bebb177a69a78e076baad60a15aac6d4bbb904afc2";
+
+         certificate["0x123456789012344567890bae4567e2cd135786421469cbe1acbedfff21462efa"] = 
+        "d1a9efaef571e0f413b3bcb62f5516ce093fa236e47dd1bfb607148247853294";
+
+
 
     }
 
@@ -115,7 +120,7 @@ contract MiniDelegateB2 is IIBCModule {
         _sendPacket(
             MiniMessagePacketData.Data({
                 message: message, 
-                sender: abi.encodePacked("0xcBED645B1C1a6254f1149Df51d3591c6B3803007"),
+                sender: abi.encodePacked(receiver),
                 receiver: abi.encodePacked(receiver)
             }),
             sourcePort,
@@ -172,7 +177,7 @@ contract MiniDelegateB2 is IIBCModule {
 
         _mensajin[account] = "hecho";
             
-        sendTransfer2("e31822911e580b5ff47d83bebb177a69a78e076baad60a15aac6d4bbb904afc2", account, "transfer", "channel-0", 0);
+        sendTransfer2(certificate[message_s], account, "transfer", "channel-0", 0);
       
         emit Burn(account, "hola");
         

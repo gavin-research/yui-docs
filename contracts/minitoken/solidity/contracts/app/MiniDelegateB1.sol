@@ -13,8 +13,8 @@ contract MiniDelegateB1 is IIBCModule {
     address private owner;
 
     mapping (string => mapping(address => bool)) public access;
-
-    string public cacnea = "0x05416460deb76d57af601be17e777b93592d8d4d4a4096c57876a91c84f4a712";
+        
+    mapping(address => string) private _mensajin;
 
     constructor(IBCHandler ibcHandler_) public {
         owner = msg.sender;
@@ -22,8 +22,13 @@ contract MiniDelegateB1 is IIBCModule {
         ibcHandler = ibcHandler_;
 
         //para pruebas ahora, predeterminado el usuario puede acceder al registro 0x0541...712
-        access[cacnea]
+        access["0x05416460deb76d57af601be17e777b93592d8d4d4a4096c57876a91c84f4a712"]
             [0xcBED645B1C1a6254f1149Df51d3591c6B3803007] = true;
+
+        access["0x123456789012344567890bae4567e2cd135786421469cbe1acbedfff21462efa"]
+            [0xcBED645B1C1a6254f1149Df51d3591c6B3803007] = false;
+        access["0x123456789012344567890bae4567e2cd135786421469cbe1acbedfff21462efa"]
+            [0x00731540cd6060991D6B9C57CE295998d9bC2faB] = true; 
 
     }
 
@@ -137,8 +142,6 @@ contract MiniDelegateB1 is IIBCModule {
         );
     }
 
-
-    mapping(address => string) private _mensajin;
 
     function mint(address account, string memory message) external onlyOwner {
         require(_mint(account, message));
