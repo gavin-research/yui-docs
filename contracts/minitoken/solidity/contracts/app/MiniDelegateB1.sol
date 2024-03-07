@@ -36,9 +36,10 @@ contract MiniDelegateB1 is IIBCModule {
 
     event Cacneacall(address indexed to, bytes message);
 
-    event Burn(address indexed from, string message);
-
     event Transfer(address indexed from, address indexed to, string message);
+
+    event GrantAccess(address indexed entity, string certificate);
+
 
     event SendTransfer(
         address indexed from,
@@ -63,22 +64,20 @@ contract MiniDelegateB1 is IIBCModule {
     }
 
 
-    //La funcion aparece 2 veces (sendTransfer y sendTransfer2), 
-    //una interna y otra externa, copiada para facilitar la visualizacion ahora mismo.
+    function grantAccess (
+        address entity,
+        string memory certificate
+    ) external {
+        // TODO CACNEA FALTA COMPROBAR QUE EL MSG SENDER REALMENTE POSEE ESE CERTIFICADO
+        access[certificate]
+            [entity] = true;
+        emit GrantAccess(
+            entity,
+            certificate);
+    }
 
-    //Lo suyo seria que la blockchain A que siempre va a enviar tenga la funcion externa y
-    //la blockchain B que recibe datos, la interna. 
-    //Esto es porque la A envia y es invocada desde fuera la funcion por un user 
-    //o contrato, y en B es un "ejecutable" que se activan el momento en el que B recibe
-    //un codigo valido asociado a un valor, que seria el solicitado desde A
-    
-    //sendTransfer contiene:
-    // el mensaje: un string desde la version anterior
-    // una address, del receptor. Aqui la address es la del usuario que recibe el mensaje. 
-    //     En este caso es todo el rato la misma cuenta, "alice" en los tests.
-    //     Esto es porque es el sender y el receiver, envia la solicitud con el codigo y ha de
-    //     de recibir luego el dato solicitado
-    //
+
+
     function sendTransfer(
         string memory message,
         address receiver,
@@ -86,7 +85,6 @@ contract MiniDelegateB1 is IIBCModule {
         string calldata sourceChannel,
         uint64 timeoutHeight
     ) external {
-        //require(_burn(msg.sender, message), "MiniMessage: failed to burn");
 
         if(access[message][msg.sender] == true){
             _sendPacket(
@@ -113,46 +111,13 @@ contract MiniDelegateB1 is IIBCModule {
         }
     }
 
-    function sendTransfer2(
-        string memory message,
-        address receiver,
-        string memory sourcePort,
-        string memory sourceChannel,
-        uint64 timeoutHeight
-    ) internal {
-       // require(_burn(msg.sender, message), "MiniMessage: failed to burn");
-
-        _sendPacket(
-            MiniMessagePacketData.Data({
-                message: message, 
-                sender: abi.encodePacked("0xcBED645B1C1a6254f1149Df51d3591c6B3803007"),
-                receiver: abi.encodePacked(receiver)
-            }),
-            sourcePort,
-            sourceChannel,
-            timeoutHeight
-        );
-        emit SendTransfer(
-            msg.sender,
-            receiver,
-            sourcePort,
-            sourceChannel,
-            timeoutHeight,
-            message
-        );
-    }
-
 
     function mint(address account, string memory message) external onlyOwner {
         require(_mint(account, message));
     }
 
     
-    //no te preocupes por las funciones de burn, balanceof, mint, no aplican aqui, las conservamos
-    //de cuando se usaba un int, en YUI original minitoken
-    function burn(string memory message) external {
-        require(_burn(msg.sender, message), "MiniMessage: failed to burn");
-    }
+
 
     function transfer(address to, string memory message) external {
         bool res;
@@ -174,18 +139,10 @@ contract MiniDelegateB1 is IIBCModule {
 
     //funcion que recibe un string, y en caso de que sea el esperado, ejecuta la funcion de envio
     //con el valor asociado
-    function _cacneacall(bytes memory _mssg) internal returns (string memory) {
+    function _cacneacall(bytes memory _mssg) internal returns (bool) {
         (address account, bytes memory message_s) = abi.decode(_mssg, (address, bytes));
         string memory data_s = string(message_s);
-        //ignorar esta linea
-        //string memory xana = string(abi.encodePacked(account));
-
-        //caso en el que se envia el codigo esperado desde la Blockchain 1 a 2
-        //El codigo es cacnea y ejecuta la funcion de envio de vuelta de 2 a 1 con el dato asociado
-        //a cacnea: cacturne, como respuesta
-
-        //En el caso final aqui accederia al mapping, cacnea seria la clave, el token enviado
-        //y devolveria el valor asociado
+       
         if(keccak256(abi.encodePacked(data_s)) != keccak256(abi.encodePacked("FAILED"))){
            _mensajin[account] = data_s;
 
@@ -193,20 +150,11 @@ contract MiniDelegateB1 is IIBCModule {
            _mensajin[account] = "Permission = False";
         }
 
-        emit Burn(account, "hola");
-        
-
         emit Cacneacall(account, message_s);
-
         
-        return "cacturne"; //este return esta para comprobaciones, podria devolver un true y ya o nada
+        return true; //este return esta para comprobaciones, podria devolver un true y ya o nada
     }
 
-    function _burn(address account, string memory message) internal returns (bool) {        
-       // _mensajin[account] = "";
-        emit Burn(account, message);
-        return true;
-    }
 
     function _transfer( //cacnea
         address from,
@@ -242,18 +190,12 @@ contract MiniDelegateB1 is IIBCModule {
         //la funcion de envio en caso de que haya recibido un codigo correcto
         //aqui hard-coded como "cacnea"
 
-        string memory respuesta = _cacneacall(message_s);
-        
-        bool buleano = false;
+        bool respuesta = _cacneacall(message_s);
 
-        if(keccak256(abi.encodePacked((respuesta))) == keccak256(abi.encodePacked(("cacturne")))){
-            buleano = true;
-        }else{
-            buleano = true;
-        }
-        return(_newAcknowledgement(buleano));
+        return(_newAcknowledgement(respuesta));
             //_newAcknowledgement(_cacneacall(data.receiver.toAddress(0), data.message));
     }
+
 
     function onAcknowledgementPacket(
         Packet.Data calldata packet,

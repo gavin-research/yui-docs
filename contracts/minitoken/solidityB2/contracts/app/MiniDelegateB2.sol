@@ -28,15 +28,11 @@ contract MiniDelegateB2 is IIBCModule {
          certificate["0x123456789012344567890bae4567e2cd135786421469cbe1acbedfff21462efa"] = 
         "d1a9efaef571e0f413b3bcb62f5516ce093fa236e47dd1bfb607148247853294";
 
-
-
     }
 
     event Mint(address indexed to, string message);
 
     event Cacneacall(address indexed to, bytes message);
-
-    event Burn(address indexed from, string message);
 
     event Transfer(address indexed from, address indexed to, string message);
 
@@ -79,34 +75,6 @@ contract MiniDelegateB2 is IIBCModule {
     //     Esto es porque es el sender y el receiver, envia la solicitud con el codigo y ha de
     //     de recibir luego el dato solicitado
     //
-    function sendTransfer(
-        string memory message,
-        address receiver,
-        string calldata sourcePort,
-        string calldata sourceChannel,
-        uint64 timeoutHeight
-    ) external {
-        //require(_burn(msg.sender, message), "MiniMessage: failed to burn");
-
-        _sendPacket(
-            MiniMessagePacketData.Data({
-                message: message, 
-                sender: abi.encodePacked(msg.sender),
-                receiver: abi.encodePacked(receiver)
-            }),
-            sourcePort,
-            sourceChannel,
-            timeoutHeight
-        );
-        emit SendTransfer(
-            msg.sender,
-            receiver,
-            sourcePort,
-            sourceChannel,
-            timeoutHeight,
-            message
-        );
-    }
 
     function sendTransfer2(
         string memory message,
@@ -115,8 +83,7 @@ contract MiniDelegateB2 is IIBCModule {
         string memory sourceChannel,
         uint64 timeoutHeight
     ) internal {
-       // require(_burn(msg.sender, message), "MiniMessage: failed to burn");
-
+      
         _sendPacket(
             MiniMessagePacketData.Data({
                 message: message, 
@@ -145,12 +112,6 @@ contract MiniDelegateB2 is IIBCModule {
     }
 
     
-    //no te preocupes por las funciones de burn, balanceof, mint, no aplican aqui, las conservamos
-    //de cuando se usaba un int, en YUI original minitoken
-    function burn(string memory message) external {
-        require(_burn(msg.sender, message), "MiniMessage: failed to burn");
-    }
-
     function transfer(address to, string memory message) external {
         bool res;
         string memory mssg;
@@ -169,29 +130,20 @@ contract MiniDelegateB2 is IIBCModule {
     }
 
 
-    function _cacneacall(bytes memory _mssg) internal returns (string memory) {
+    function _cacneacall(bytes memory _mssg) internal returns (bool) {
         (address account, bytes memory message_s) = abi.decode(_mssg, (address, bytes));
         string memory data_s = string(message_s);
-        //ignorar esta linea
-        //string memory xana = string(abi.encodePacked(account));
-
+       
         _mensajin[account] = "hecho";
             
         sendTransfer2(certificate[message_s], account, "transfer", "channel-0", 0);
       
-        emit Burn(account, "hola");
-        
         emit Cacneacall(account, message_s);
         
-        return "cacturne"; //este return esta para comprobaciones, podria devolver un true y ya o nada
+        return true; //este return esta para comprobaciones, podria devolver un true y ya o nada
     
     }
 
-    function _burn(address account, string memory message) internal returns (bool) {        
-       // _mensajin[account] = "";
-        emit Burn(account, message);
-        return true;
-    }
 
     function _transfer( //cacnea
         address from,
@@ -227,16 +179,9 @@ contract MiniDelegateB2 is IIBCModule {
         //la funcion de envio en caso de que haya recibido un codigo correcto
         //aqui hard-coded como "cacnea"
 
-        string memory respuesta = _cacneacall(message_s);
+        bool respuesta = _cacneacall(message_s);
         
-        bool buleano = false;
-
-        if(keccak256(abi.encodePacked((respuesta))) == keccak256(abi.encodePacked(("cacturne")))){
-            buleano = true;
-        }else{
-            buleano = true;
-        }
-        return(_newAcknowledgement(buleano));
+        return(_newAcknowledgement(respuesta));
             //_newAcknowledgement(_cacneacall(data.receiver.toAddress(0), data.message));
     }
 
