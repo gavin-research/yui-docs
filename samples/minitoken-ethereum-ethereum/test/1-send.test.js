@@ -1,3 +1,4 @@
+// BOB ENVIO CORRECTAMENTE UN MENSAJE ENTRE CADENAS
 const SCAccess = artifacts.require("SCAccess");
 
 contract("MiniMessage", (accounts) => {

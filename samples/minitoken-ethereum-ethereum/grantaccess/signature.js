@@ -49,8 +49,9 @@ async function grantAccess(signedMessage, message, hashedCode, verifier) {
         console.log({ r, s, v });
 
         console.log(verifier);
-        // Call the grantAccess function
-        const result = await contractInstance.methods.grantAccess(verifier, message, hashedCode, r, s, v).send({ from: accounts[0] });
+        // Call the modifyAccess function with a true
+        //to revoke access call modifyAccess with a false
+        const result = await contractInstance.methods.modifyAccess(verifier, message, hashedCode, r, s, v, true).send({ from: accounts[0] });
         console.log(result);
         return result;
     } catch (error) {

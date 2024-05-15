@@ -1,3 +1,4 @@
+// BOB EFECTIVAMENTE RECIBE EL HASH SALTEADO F377E3...9E4 ASOCIADO AL CODIGO F73910...30E
 const SCAccess = artifacts.require("SCAccess");
 
 contract("SCAccess", (accounts) => {

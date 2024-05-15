@@ -1,3 +1,4 @@
+//ALICE DA ACCESO A BOB AL CODIGO 0XF73910...30E ASOCIADO AL HASH SALTEADO DE UN CERTIFICADO
 require("web3")
 const SCAccess = artifacts.require("SCAccess");
 

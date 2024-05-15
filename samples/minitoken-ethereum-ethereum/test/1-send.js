@@ -1,3 +1,4 @@
+//BOB SOLICITA ACCESO AL HASH SALTEADO ASOCIADO AL CODIGO 0XF73910...30E
 const SCAccess = artifacts.require("SCAccess");
 
 module.exports = async (callback) => {
