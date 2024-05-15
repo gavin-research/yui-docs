@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Hash Calculator</title>
+</head>
+<body>
+    <input type="text" id="textInput" placeholder="Enter text">
+    <button id="calculateHas">Calculate Hash</button>
+    <p id="hashResult"></p>
+
+    <script>
+       document.getElementById('calculateHas').addEventListener('click', async () => {
+        const message = document.getElementById('textInput').value;
+        const result = await sha256(message);
+        document.getElementById('hashResult').textContent = result;
+});
+      async function sha256(str) {
+        const buf = await crypto.subtle.digest("SHA-256", new TextEncoder("utf-8").encode(str));
+        return Array.prototype.map.call(new Uint8Array(buf), x=>(('00'+x.toString(16)).slice(-2))).join('');
+      }
+
+
+    </script>
+</body>
+</html>

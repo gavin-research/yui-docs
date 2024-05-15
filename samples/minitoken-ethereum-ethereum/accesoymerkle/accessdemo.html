@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metamask Demo</title>
+</head>
+<body>
+    <h1>Metamask Ejemplo Envío de código por Verifier</h1>
+    <input type="text" id="message" placeholder="Código del Certificado">
+    <button id="sendButton">Enviar</button>
+    <p id="result"></p>
+
+    <h1>Metamask Ejemplo Verificación hash recibida con hashes que tiene el verifier</h1>
+    <input type="text" id="hashes" placeholder="0x123...ef, 0x8a5...23, 0x07c..bb">
+    <button id="checkButton">Comprobar</button>
+    <p id="merklevalid"></p>
+
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.3.6/dist/web3.min.js"></script>
+    <script type="module" src="access.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.0.0/crypto-js.min.js"></script>
+
+
+</body>
+</html>

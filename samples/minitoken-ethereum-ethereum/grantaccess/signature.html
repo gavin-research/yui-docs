@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metamask Demo</title>
+</head>
+<body>
+    <h1>Metamask Ejemplo Firma para dar Acceso</h1>
+    <input type="text" id="message" placeholder="Certificado al que das acceso">
+    <input type="text" id="verifier" placeholder="Usuario al que das acceso">
+    <button id="signButton">Dar acceso</button>
+    <p id="result"></p>
+
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.3.6/dist/web3.min.js"></script>
+    <script type="module" src="signature.js"></script>
+</body>
+</html>
