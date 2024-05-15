@@ -1,12 +1,11 @@
-const MiniMessage = artifacts.require("MiniMessage");
+const SCAccess = artifacts.require("SCAccess");
 
 contract("MiniMessage", (accounts) => {
-  it("should cacneacall el cacnea", async () => {
+  it("bob debe haber enviado 0xf73910ddb3e35a2db69926e7d422df45a52751d09bc99ceaed08ed2dd497930e por el IBC", async () => {
     const block = await web3.eth.getBlockNumber();
-    MiniMessage.deployed()
+    SCAccess.deployed()
       .then((instance) =>
-        instance.getPastEvents("Cacneacall", {
-          
+        instance.getPastEvents("SendTransfer", {
           fromBlock: block,
         })
       )
@@ -14,7 +13,7 @@ contract("MiniMessage", (accounts) => {
         assert.equal(
           evt[0].args.amount.valueOf(),
           "",
-          "cacnea wasn't burnt from Alice account"
+          "0xf73910ddb3e35a2db69926e7d422df45a52751d09bc99ceaed08ed2dd497930e no ha sido enviado desde bob a traves del ibc"
         );
       });
   });

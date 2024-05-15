@@ -1,26 +1,26 @@
-const MiniMessage = artifacts.require("MiniMessage");
+const SCAccess = artifacts.require("SCAccess");
 
 module.exports = async (callback) => {
   const accounts = await web3.eth.getAccounts();
   const alice = accounts[1];
   const bob = accounts[2];
 
-  const mintAmount = "cacnea";
-  const sendAmount = "0x05416460deb76d57af601be17e777b93592d8d4d4a4096c57876a91c84f4a712";
+  const sendAmount = "0xf73910ddb3e35a2db69926e7d422df45a52751d09bc99ceaed08ed2dd497930e";
   const port = "transfer";
   const channel = "channel-0";
   const timeoutHeight = 0;
 
-  const miniMessage = await MiniMessage.deployed();
-  console.log("GROUDON");
-  await miniMessage.sendTransfer(sendAmount, alice, port, channel, timeoutHeight, {
-    from: alice,
+  const scaccess = await SCAccess.deployed();
+
+  // bob solicita acceso para verificar el certificado cheddar
+  await scaccess.sendTransfer(sendAmount, bob, port, channel, timeoutHeight, {
+    from: bob,
   });
-  console.log("combusken");
-  const sendTransfer = await miniMessage.getPastEvents("SendTransfer", {
+
+  const sendTransfer = await scaccess.getPastEvents("SendTransfer", {
     fromBlock: 0,
   });
-  console.log("blaziken");
+  
   console.log(sendTransfer);
 
   callback();
