@@ -42,6 +42,7 @@ This is because all interactions are made from the Blockchain A, and Blockchain 
 
 You can execute the following tests from *samples/minitoken-ethereum-ethereum* to check the functioning of the project:
 
+- `npx truffle exec test/0-grantaccess.js --network=ibc0`
 - `npx truffle exec test/1-send.js --network=ibc0`
 - `npx truffle test test/1-send.test.js --network=ibc0 --compile-none --migrate-none`
 - `npx truffle test test/2-ibc1.test.js --network=ibc0 --compile-none --migrate-none`
