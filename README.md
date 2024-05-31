@@ -47,7 +47,7 @@ You can execute the following tests from *samples/minitoken-ethereum-ethereum* t
 - `npx truffle test test/1-send.test.js --network=ibc0 --compile-none --migrate-none`
 - `npx truffle test test/2-ibc1.test.js --network=ibc0 --compile-none --migrate-none`
 
-These tests send a "Kadabra" from Blockchain A, so it evolves thanks to trading evolution the moment it arrives to Blockchain B through the IBC. It is immediately returned to Blockchain A automatically through the same IBC, so the owner can see they have an "Alakazam" now on Blockchain A.
+These tests allow first to give access to Bob to Alice salted hash. Then Bob sends a token from Blockchain A and it arrives to Blockchain B through the IBC. The salted hash is immediately returned to Blockchain A automatically through the same IBC, so the owner can see they have the salted hash now on Blockchain A.
 
 # YUI
 
