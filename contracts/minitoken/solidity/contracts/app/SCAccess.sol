@@ -13,12 +13,12 @@ contract SCAccess is IIBCModule {
     address private owner;
 
     //mapping codigo del certificado - holder
-    mapping(string => address) private holders; 
+    mapping(string => address) private holders;
     //mapping codigo - verifier - permisos de acceso
     mapping (string => mapping(address => bool)) public access;
     //mapping provisional verifier - ultima superhash recibida
     mapping(address => string) private _mensajin;
- 
+
 
     constructor(IBCHandler ibcHandler_) public {
         owner = msg.sender;
@@ -27,22 +27,28 @@ contract SCAccess is IIBCModule {
 
         //alice es holder de cert1 Cheddar
         holders["0xf73910ddb3e35a2db69926e7d422df45a52751d09bc99ceaed08ed2dd497930e"]=
-        0xcBED645B1C1a6254f1149Df51d3591c6B3803007;
-        
+        0xEca8bB9Be63164Ff5b9F1e0a3a6fC8b369E8455F;
+
         //alice es holder de cert2 Glasha
         holders["0x66de0b546355b8dc6b244662365b8f75b20bddb2341fbd313a8492556d78c11e"]=
-        0xcBED645B1C1a6254f1149Df51d3591c6B3803007;
-
+        0xEca8bB9Be63164Ff5b9F1e0a3a6fC8b369E8455F;
 
     //////////////////////////////////////////////////////////////////////////////////////////////
 
         //alice puede acceder al certificado Cheddar con esta clave, la clave 1.1
         access["0xf73910ddb3e35a2db69926e7d422df45a52751d09bc99ceaed08ed2dd497930e"]
-            [0xcBED645B1C1a6254f1149Df51d3591c6B3803007] = true;
+            [0x100637B66399A7f7324C77233012C563176F31F1] = true;
+        {
+            0: no registro, // por defecto
+            1: acceso usuario total,
+            2: acceso usuario parcial
+            3: acceso usuario y terceros total
+            4: acceso denegado
+        }
 
         //alice puede acceder al certificado Glasha con esta clave, la clave 1.2
         access["0x66de0b546355b8dc6b244662365b8f75b20bddb2341fbd313a8492556d78c11e"]
-            [0xcBED645B1C1a6254f1149Df51d3591c6B3803007] = false;
+            [0x100637B66399A7f7324C77233012C563176F31F1] = false;
 
         //bob no puede acceder a nada hasta que alice no le de acceso
         ////
@@ -104,34 +110,48 @@ contract SCAccess is IIBCModule {
             accessvalue);
     }
 
+struct FirmaValidacion {
+    bytes32 _hashCodeCert;
+    bytes32 _r;
+    bytes32 _s;
+    uint8 _v;
+}
 
+struct RelayerParams {
+    string  sourcePort;
+    string  sourceChannel;
+    uint64 timeoutHeight;
+}
 
-
+/*Problema aqui al anadir mas campos como parametros a la llamada
+CompilerError: Stack too deep, try removing local variables.
+*/
     function sendTransfer(
         string memory message,
         address receiver,
-        string calldata sourcePort,
-        string calldata sourceChannel,
-        uint64 timeoutHeight
+        RelayerParams calldata param,
+        FirmaValidacion calldata firma
     ) external {
 
-        if(access[message][msg.sender] == true){
+        address signer = _getSigner(firma);
+
+        if(access[message][signer] == true || holders[message] == signer){
             _sendPacket(
                 MiniMessagePacketData.Data({
-                    message: message, 
-                    sender: abi.encodePacked(msg.sender),
+                    message: message,
+                    sender: abi.encodePacked(signer),
                     receiver: abi.encodePacked(receiver)
                 }),
-                sourcePort,
-                sourceChannel,
-                timeoutHeight
+                param.sourcePort,
+                param.sourceChannel,
+                param.timeoutHeight
             );
             emit SendTransfer(
-                msg.sender,
+                signer,
                 receiver,
-                sourcePort,
-                sourceChannel,
-                timeoutHeight,
+                param.sourcePort,
+                param.sourceChannel,
+                param.timeoutHeight,
                 message
             );
 
@@ -140,13 +160,16 @@ contract SCAccess is IIBCModule {
         }
     }
 
+    function _getSigner(FirmaValidacion memory firma) internal pure returns (address) {
+        bytes memory prefix = "\x19Ethereum Signed Message:\n32";
+        bytes32 prefixedHashMessage = keccak256(abi.encodePacked(prefix, firma._hashCodeCert));
+        address signer = ecrecover(prefixedHashMessage, firma._v, firma._r, firma._s);
+        return signer;
+    }
 
     function mint(address account, string memory message) external onlyOwner {
         require(_mint(account, message));
     }
-
-    
-
 
     function transfer(address to, string memory message) external {
         bool res;
@@ -171,7 +194,7 @@ contract SCAccess is IIBCModule {
     function _cacneacall(bytes memory _mssg) internal returns (bool) {
         (address account, bytes memory message_s) = abi.decode(_mssg, (address, bytes));
         string memory data_s = string(message_s);
-       
+
         if(keccak256(abi.encodePacked(data_s)) != keccak256(abi.encodePacked("FAILED"))){
            _mensajin[account] = data_s;
 
@@ -180,7 +203,7 @@ contract SCAccess is IIBCModule {
         }
 
         emit Cacneacall(account, message_s);
-        
+
         return true; //este return esta para comprobaciones, podria devolver un true y ya o nada
     }
 
@@ -212,8 +235,8 @@ contract SCAccess is IIBCModule {
             packet.data
         );
         //(address sendercontrato, string memory mensajillo) = abi.decode(data.message, (address, string));
-        bytes memory message_s = abi.encode(data.receiver.toAddress(0), data.message); //aqui mandaria mensajillo en vez de data.message 
-        
+        bytes memory message_s = abi.encode(data.receiver.toAddress(0), data.message); //aqui mandaria mensajillo en vez de data.message
+
         //en el momento en el que la Blockchain 2 recibe un string, se invoca a cacneacall,
         //funcion provisional que simplifica el proceso de volver a invocar
         //la funcion de envio en caso de que haya recibido un codigo correcto
@@ -280,14 +303,14 @@ contract SCAccess is IIBCModule {
 
     //Envia un paquete de datos (creado con la libreria PacketMssg)
     //por el canal especificado hasta la Blockchain B.
-    //El enpaquetado se hace en bytes, la libreria ya la modificamos en el 
-    //"paso anterior" de int a string para que cuente los saltos a dar para 
+    //El enpaquetado se hace en bytes, la libreria ya la modificamos en el
+    //"paso anterior" de int a string para que cuente los saltos a dar para
     //desenpaquetar correctamente. Es Packetmssg.sol, en ../lib
 
-    //No tienes que preocuparte por canales ni puertos, usamos los 
+    //No tienes que preocuparte por canales ni puertos, usamos los
     //de serie de YUI original, son muchas librerias y mejor no tocarlo
     function _sendPacket(
-        MiniMessagePacketData.Data memory data, 
+        MiniMessagePacketData.Data memory data,
         string memory sourcePort,
         string memory sourceChannel,
         uint64 timeoutHeight
