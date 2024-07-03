@@ -12,13 +12,35 @@ contract SCAccess is IIBCModule {
 
     address private owner;
 
+    enum Acceso{
+        no_registro, // por defecto
+        acceso_total, //acceso mediante caso 1, usuario-tercero
+        acceso_parcial, //acceso mediante caso 2, usuario-tercero info parcial
+        acceso_usuario_y_terceros_total, //acceso mediante caso 3, usuario permite: issuer-tercero
+        acceso_denegado //acceso otorgado previamente PERO ELIMINADO posteriormente
+    }
+
+    Acceso constant defaultaccess = Acceso.no_registro;
+
     //mapping codigo del certificado - holder
     mapping(string => address) private holders; 
     //mapping codigo - verifier - permisos de acceso
-    mapping (string => mapping(address => bool)) public access;
+    mapping (string => mapping(address => Acceso)) public access;
     //mapping provisional verifier - ultima superhash recibida
     mapping(address => string) private _mensajin;
  
+    struct FirmaValidacion {
+        bytes32 _hashCodeCert;
+        bytes32 _r;
+        bytes32 _s;
+        uint8 _v;
+    }
+
+    struct RelayerParams {
+        string  sourcePort;
+        string  sourceChannel;
+        uint64 timeoutHeight;
+    }
 
     constructor(IBCHandler ibcHandler_) public {
         owner = msg.sender;
@@ -38,11 +60,11 @@ contract SCAccess is IIBCModule {
 
         //alice puede acceder al certificado Cheddar con esta clave, la clave 1.1
         access["0xf73910ddb3e35a2db69926e7d422df45a52751d09bc99ceaed08ed2dd497930e"]
-            [0xcBED645B1C1a6254f1149Df51d3591c6B3803007] = true;
+            [0xcBED645B1C1a6254f1149Df51d3591c6B3803007] =  Acceso.acceso_total;
 
         //alice puede acceder al certificado Glasha con esta clave, la clave 1.2
         access["0x66de0b546355b8dc6b244662365b8f75b20bddb2341fbd313a8492556d78c11e"]
-            [0xcBED645B1C1a6254f1149Df51d3591c6B3803007] = false;
+            [0xcBED645B1C1a6254f1149Df51d3591c6B3803007] = Acceso.acceso_total;
 
         //bob no puede acceder a nada hasta que alice no le de acceso
         ////
@@ -56,7 +78,7 @@ contract SCAccess is IIBCModule {
 
     event Transfer(address indexed from, address indexed to, string message);
 
-    event ModifyAccess(address indexed entity, string certificate, bool access);
+    event ModifyAccess(address indexed entity, string certificate, Acceso access);
 
 
     event SendTransfer(
@@ -85,19 +107,15 @@ contract SCAccess is IIBCModule {
      function modifyAccess(
         address entity,
         string memory certificate,
-        bytes32 _hashCodeCert,
-        bytes32 _r,
-        bytes32 _s,
-        uint8 _v,
-        bool accessvalue
+        FirmaValidacion calldata firma,
+        Acceso accessvalue
     ) external {
         bytes memory prefix = "\x19Ethereum Signed Message:\n32";
-        bytes32 prefixedHashMessage = keccak256(abi.encodePacked(prefix, _hashCodeCert));
-        address signer = ecrecover(prefixedHashMessage, _v, _r, _s);
+        bytes32 prefixedHashMessage = keccak256(abi.encodePacked(prefix, firma._hashCodeCert));
+        address signer = ecrecover(prefixedHashMessage, firma._v, firma._r, firma._s);
 
         require(holders[certificate] == signer);
-        access[certificate]
-            [entity] = accessvalue;
+        access[certificate][entity] = accessvalue;
         emit ModifyAccess(
             entity,
             certificate,
@@ -105,33 +123,43 @@ contract SCAccess is IIBCModule {
     }
 
 
-
+     function _getSigner(FirmaValidacion memory firma) internal pure returns (address) {
+        bytes memory prefix = "\x19Ethereum Signed Message:\n32";
+        bytes32 prefixedHashMessage = keccak256(abi.encodePacked(prefix, firma._hashCodeCert));
+        address signer = ecrecover(prefixedHashMessage, firma._v, firma._r, firma._s);
+        return signer;
+    }
 
     function sendTransfer(
         string memory message,
         address receiver,
-        string calldata sourcePort,
-        string calldata sourceChannel,
-        uint64 timeoutHeight
+        RelayerParams calldata param,
+        FirmaValidacion calldata firma
     ) external {
+//check for short circuits cacnea
 
-        if(access[message][msg.sender] == true){
+        address signer = _getSigner(firma);
+
+        if((access[message][signer] == Acceso.acceso_total) || 
+            (access[message][signer] == Acceso.acceso_parcial) || 
+            (access[message][signer] == Acceso.acceso_usuario_y_terceros_total) ||
+            (holders[message] == signer)){
             _sendPacket(
                 MiniMessagePacketData.Data({
                     message: message, 
-                    sender: abi.encodePacked(msg.sender),
+                    sender: abi.encodePacked(signer),
                     receiver: abi.encodePacked(receiver)
                 }),
-                sourcePort,
-                sourceChannel,
-                timeoutHeight
+                param.sourcePort,
+                param.sourceChannel,
+                param.timeoutHeight
             );
             emit SendTransfer(
-                msg.sender,
+                signer,
                 receiver,
-                sourcePort,
-                sourceChannel,
-                timeoutHeight,
+                param.sourcePort,
+                param.sourceChannel,
+                param.timeoutHeight,
                 message
             );
 

@@ -24,10 +24,11 @@ module.exports = async (callback) => {
   const v = parseInt(signature.slice(130, 132), 16);
   console.log({ r, s, v });
 
-
+//CACNEA CREAR EL STRUCT DE LA FIRMA PARA MODIFY ACCESS
   const scAccess = await SCAccess.deployed();
-  
-  await scAccess.modifyAccess(entity, certificatecode, hashedCode, r, s, v, true, {
+  const structFirma = [hashedCode, r, s, v];
+
+  await scAccess.modifyAccess(entity, certificatecode, structFirma, 1, {
     from: alice,
   });
 

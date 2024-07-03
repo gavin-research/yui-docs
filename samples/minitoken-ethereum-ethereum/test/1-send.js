@@ -6,15 +6,35 @@ module.exports = async (callback) => {
   const alice = accounts[1];
   const bob = accounts[2];
 
-  const sendAmount = "0xf73910ddb3e35a2db69926e7d422df45a52751d09bc99ceaed08ed2dd497930e";
+  const certificatecode = "0xf73910ddb3e35a2db69926e7d422df45a52751d09bc99ceaed08ed2dd497930e";
   const port = "transfer";
   const channel = "channel-0";
   const timeoutHeight = 0;
 
   const scaccess = await SCAccess.deployed();
+//CACNEA CREAR EL STRUCT DE LA FIRMA Y CANAL Y ESO PARA SENDTRANSFER
+//SENDTRASFER AHORA NECESITA UNA FIRMA, DE UN TOKEN. GENERAR DICHO TOKEN TAMBIEN PARA VERIFICAR USER
 
+  const params = [port, channel, timeoutHeight];
+
+  //-------------------------///
+  const hashedCode = web3.utils.sha3(certificatecode);
+  console.log({ hashedCode });
+
+  //const signature = await alice.sign(hashedCode);
+  const signature = await web3.eth.sign(hashedCode, bob)
+  console.log({ signature });
+
+  // split signature
+  const r = signature.slice(0, 66);
+  const s = "0x" + signature.slice(66, 130);
+  const v = parseInt(signature.slice(130, 132), 16);
+  console.log({ r, s, v });
+  //-------------------------//
+
+  const firma = [hashedCode, r, s, v];
   // bob solicita acceso para verificar el certificado cheddar
-  await scaccess.sendTransfer(sendAmount, bob, port, channel, timeoutHeight, {
+  await scaccess.sendTransfer(certificatecode, bob, params, firma , {
     from: bob,
   });
 
