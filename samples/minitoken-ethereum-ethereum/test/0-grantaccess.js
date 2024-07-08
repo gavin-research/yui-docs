@@ -11,7 +11,16 @@ module.exports = async (callback) => {
   const certificatecode = "0xf73910ddb3e35a2db69926e7d422df45a52751d09bc99ceaed08ed2dd497930e";
   const entity = bob;
 
-  const hashedCode = web3.utils.sha3(certificatecode);
+  const scAccess = await SCAccess.deployed();
+
+  // get user nonce
+  //const nonce = await scAccess.get_nonce(alice);
+  const nonce = await scAccess.getNonce(alice);
+  const nonceNumber = nonce.toNumber();
+
+  console.log(nonceNumber);
+
+  const hashedCode = web3.utils.keccak256(nonceNumber.toString());
   console.log({ hashedCode });
 
   //const signature = await alice.sign(hashedCode);
@@ -24,19 +33,26 @@ module.exports = async (callback) => {
   const v = parseInt(signature.slice(130, 132), 16);
   console.log({ r, s, v });
 
-//CACNEA CREAR EL STRUCT DE LA FIRMA PARA MODIFY ACCESS
-  const scAccess = await SCAccess.deployed();
-  const structFirma = [hashedCode, r, s, v];
 
-  await scAccess.modifyAccess(entity, certificatecode, structFirma, 1, {
+  const structFirma = {
+    _hashCodeCert: hashedCode,
+    _r: r,
+    _s: s,
+    _v: v
+  };
+
+  const accessValue = 1;
+
+  await scAccess.modifyAccess(entity, certificatecode, structFirma, accessValue, {
     from: alice,
   });
 
-  
   const grantAccess = await scAccess.getPastEvents("ModifyAccess", {
     fromBlock: 0,
   });
   
   console.log(grantAccess);
+
+
   callback();
 };

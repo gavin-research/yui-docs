@@ -15,10 +15,20 @@ module.exports = async (callback) => {
 //CACNEA CREAR EL STRUCT DE LA FIRMA Y CANAL Y ESO PARA SENDTRANSFER
 //SENDTRASFER AHORA NECESITA UNA FIRMA, DE UN TOKEN. GENERAR DICHO TOKEN TAMBIEN PARA VERIFICAR USER
 
-  const params = [port, channel, timeoutHeight];
+  const params = {
+    sourcePort: port,
+    sourceChannel: channel,
+    timeoutHeight: timeoutHeight
+  };
 
   //-------------------------///
-  const hashedCode = web3.utils.sha3(certificatecode);
+  const nonce = await scaccess.getNonce(bob);
+  const nonceNumber = nonce.toNumber();
+  
+  console.log(nonceNumber);
+
+  const hashedCode = web3.utils.keccak256(nonceNumber.toString());
+
   console.log({ hashedCode });
 
   //const signature = await alice.sign(hashedCode);
@@ -32,9 +42,14 @@ module.exports = async (callback) => {
   console.log({ r, s, v });
   //-------------------------//
 
-  const firma = [hashedCode, r, s, v];
+  const structFirma = {
+    _hashCodeCert: hashedCode,
+    _r: r,
+    _s: s,
+    _v: v
+  };
   // bob solicita acceso para verificar el certificado cheddar
-  await scaccess.sendTransfer(certificatecode, bob, params, firma , {
+  await scaccess.sendTransfer(certificatecode, bob, params, structFirma , {
     from: bob,
   });
 

@@ -4,6 +4,8 @@ pragma solidity ^0.8.9;
 import "@hyperledger-labs/yui-ibc-solidity/contracts/core/OwnableIBCHandler.sol";
 import "solidity-bytes-utils/contracts/BytesLib.sol";
 import "../lib/PacketMssg.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
+
 //noivern
 contract SCAccess is IIBCModule {
     IBCHandler ibcHandler;
@@ -28,7 +30,9 @@ contract SCAccess is IIBCModule {
     mapping (string => mapping(address => Acceso)) public access;
     //mapping provisional verifier - ultima superhash recibida
     mapping(address => string) private _mensajin;
- 
+    //mapping usuario - nonce para firmas
+    mapping(address => uint256) private nonce_sign; 
+
     struct FirmaValidacion {
         bytes32 _hashCodeCert;
         bytes32 _r;
@@ -80,6 +84,10 @@ contract SCAccess is IIBCModule {
 
     event ModifyAccess(address indexed entity, string certificate, Acceso access);
 
+    event NonceSign(uint256 nonce);
+
+//cacnea borrar, es pa pruebas
+    event EventoCacnea(bytes32 firmaHashCode, bytes32 abiFirmaHashCode, bytes noncebytes,uint256 nonce);
 
     event SendTransfer(
         address indexed from,
@@ -104,17 +112,22 @@ contract SCAccess is IIBCModule {
     }
 
 
+    function getNonce(address user) public view returns (uint256){
+        return nonce_sign[user];
+    }
+
+
      function modifyAccess(
         address entity,
         string memory certificate,
         FirmaValidacion calldata firma,
         Acceso accessvalue
     ) external {
-        bytes memory prefix = "\x19Ethereum Signed Message:\n32";
-        bytes32 prefixedHashMessage = keccak256(abi.encodePacked(prefix, firma._hashCodeCert));
-        address signer = ecrecover(prefixedHashMessage, firma._v, firma._r, firma._s);
+        address signer = _getSigner(firma);
+        require(firma._hashCodeCert == keccak256(abi.encodePacked(Strings.toString(nonce_sign[signer]))), "Invalid signer");
+        require(holders[certificate] == signer, "Invalid signer 2");
 
-        require(holders[certificate] == signer);
+        nonce_sign[signer] = nonce_sign[signer] + 1;
         access[certificate][entity] = accessvalue;
         emit ModifyAccess(
             entity,
@@ -127,6 +140,7 @@ contract SCAccess is IIBCModule {
         bytes memory prefix = "\x19Ethereum Signed Message:\n32";
         bytes32 prefixedHashMessage = keccak256(abi.encodePacked(prefix, firma._hashCodeCert));
         address signer = ecrecover(prefixedHashMessage, firma._v, firma._r, firma._s);
+        
         return signer;
     }
 
@@ -136,9 +150,10 @@ contract SCAccess is IIBCModule {
         RelayerParams calldata param,
         FirmaValidacion calldata firma
     ) external {
-//check for short circuits cacnea
-
         address signer = _getSigner(firma);
+        require(firma._hashCodeCert == keccak256(abi.encodePacked(Strings.toString(nonce_sign[signer]))), "Invalid signer");
+        
+        nonce_sign[signer] = nonce_sign[signer] + 1;
 
         if((access[message][signer] == Acceso.acceso_total) || 
             (access[message][signer] == Acceso.acceso_parcial) || 
