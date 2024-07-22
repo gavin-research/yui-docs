@@ -24,14 +24,25 @@ contract SCAccess is IIBCModule {
 
     Acceso constant defaultaccess = Acceso.no_registro;
 
+    address[][] public entidades1cert;
+    address[][][] public entidades;
+
     //mapping codigo del certificado - holder
     mapping(string => address) private holders; 
+    //mapping espejo del anterior para el getAccessList
+    //Si usamos array hay que iterar. Si recorremos el mapping anterior por valor para sacar key tambien.
+    //Iterar sobre algo de tamano desconocido puede consumir toda la memoria del bloque.
+    mapping(address => string[]) public holdersEspejo;
     //mapping codigo - verifier - permisos de acceso
     mapping (string => mapping(address => Acceso)) public access;
     //mapping provisional verifier - ultima superhash recibida
     mapping(address => string) private _mensajin;
     //mapping usuario - nonce para firmas
     mapping(address => uint256) private nonce_sign; 
+
+    //NOIVERN
+    mapping(address => mapping(address => Acceso)) public accesslist;
+    mapping(address => mapping(string => mapping(Acceso => address[]))) public accesslista;
 
     struct FirmaValidacion {
         bytes32 _hashCodeCert;
@@ -59,6 +70,13 @@ contract SCAccess is IIBCModule {
         holders["0x66de0b546355b8dc6b244662365b8f75b20bddb2341fbd313a8492556d78c11e"]=
         0xcBED645B1C1a6254f1149Df51d3591c6B3803007;
 
+        //espejo del anterior con lista de certificados que posee
+        //CADA VEZ QUE SE VUELQUE LA INFORMACION VA A ESTAR DUPLICADA 
+        holdersEspejo[0xcBED645B1C1a6254f1149Df51d3591c6B3803007]=
+        ["0xf73910ddb3e35a2db69926e7d422df45a52751d09bc99ceaed08ed2dd497930e",
+        "0x66de0b546355b8dc6b244662365b8f75b20bddb2341fbd313a8492556d78c11e"];
+ 
+
 
     //////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -72,6 +90,21 @@ contract SCAccess is IIBCModule {
 
         //bob no puede acceder a nada hasta que alice no le de acceso
         ////
+
+
+        accesslista[0xcBED645B1C1a6254f1149Df51d3591c6B3803007]
+            ["0xf73910ddb3e35a2db69926e7d422df45a52751d09bc99ceaed08ed2dd497930e"]
+            [Acceso.acceso_total] = 
+            [0xcBED645B1C1a6254f1149Df51d3591c6B3803007, 0xa89F47C6b463f74d87572b058427dA0A13ec5425];
+        accesslista[0xcBED645B1C1a6254f1149Df51d3591c6B3803007]
+            ["0xf73910ddb3e35a2db69926e7d422df45a52751d09bc99ceaed08ed2dd497930e"]
+            [Acceso.acceso_parcial] =
+            [0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5, 0x478D97356251BF1F1e744587E67207dAb100CaDb];
+        accesslista[0xcBED645B1C1a6254f1149Df51d3591c6B3803007]
+            ["0x66de0b546355b8dc6b244662365b8f75b20bddb2341fbd313a8492556d78c11e"]
+            [Acceso.acceso_total] = 
+            [0xcBED645B1C1a6254f1149Df51d3591c6B3803007, 0x4838B106FCe9647Bdf1E7877BF73cE8B0BAD5f97];
+        
     }
 
 
@@ -114,6 +147,36 @@ contract SCAccess is IIBCModule {
 
     function getNonce(address user) public view returns (uint256){
         return nonce_sign[user];
+    }
+
+    //esta funcion es imposible porque los mappings solo pueden ser data allocation storage
+    //nada dinamico, ni returns ni almacenamiento en variables temporales ni nada.
+    function getAccessList(address holder) public returns (address[][][] memory){
+  //      require()
+  // quitar acceso de parametros
+        string[] storage certificates = holdersEspejo[holder];
+        
+        //address[] memory entidad;
+
+        delete entidades;
+
+        Acceso[4] memory tipo_de_acceso = [Acceso.acceso_total, Acceso.acceso_parcial, 
+                Acceso.acceso_usuario_y_terceros_total, Acceso.acceso_denegado];
+
+        for(uint256 i = 0; i < certificates.length; i++){
+            for(uint j = 0; j < 4; j++){
+                Acceso acceso = tipo_de_acceso[j];
+                address[] memory entidad = accesslista[holder][certificates[i]][acceso];
+                entidades1cert.push(entidad);
+            }
+            entidades.push(entidades1cert);
+            delete entidades1cert;
+        }
+        return entidades;
+    }
+
+    function getEntidades() public view returns (address[][][] memory) {
+        return entidades;
     }
 
 
