@@ -40,9 +40,9 @@ contract SCAccess is IIBCModule {
     //mapping usuario - nonce para firmas
     mapping(address => uint256) private nonce_sign; 
 
-    //NOIVERN
     mapping(address => mapping(address => Acceso)) public accesslist;
     mapping(address => mapping(string => mapping(Acceso => address[]))) public accesslista;
+    mapping(address => address[][][]) public userEntidades;
 
     struct FirmaValidacion {
         bytes32 _hashCodeCert;
@@ -70,11 +70,20 @@ contract SCAccess is IIBCModule {
         holders["0x66de0b546355b8dc6b244662365b8f75b20bddb2341fbd313a8492556d78c11e"]=
         0xcBED645B1C1a6254f1149Df51d3591c6B3803007;
 
+        //bob es holder de cert3 Moon
+        holders["0x116ba6d1a2621ebd1f086f00ddfe556ca5dd7c140c01fa0c56c0361448a50fcb"]=
+        0x00731540cd6060991D6B9C57CE295998d9bC2faB;
+
+
+
         //espejo del anterior con lista de certificados que posee
         //CADA VEZ QUE SE VUELQUE LA INFORMACION VA A ESTAR DUPLICADA 
         holdersEspejo[0xcBED645B1C1a6254f1149Df51d3591c6B3803007]=
         ["0xf73910ddb3e35a2db69926e7d422df45a52751d09bc99ceaed08ed2dd497930e",
         "0x66de0b546355b8dc6b244662365b8f75b20bddb2341fbd313a8492556d78c11e"];
+
+        holdersEspejo[0x00731540cd6060991D6B9C57CE295998d9bC2faB]=
+        ["0x116ba6d1a2621ebd1f086f00ddfe556ca5dd7c140c01fa0c56c0361448a50fcb"];
  
 
 
@@ -88,10 +97,14 @@ contract SCAccess is IIBCModule {
         access["0x66de0b546355b8dc6b244662365b8f75b20bddb2341fbd313a8492556d78c11e"]
             [0xcBED645B1C1a6254f1149Df51d3591c6B3803007] = Acceso.acceso_total;
 
-        //bob no puede acceder a nada hasta que alice no le de acceso
+        //bob no puede acceder a nada de alice hasta que alice no le de acceso
         ////
 
+        //bob puede acceder al certificado Moon con esta clave, la clave 2.1
+        access["0x116ba6d1a2621ebd1f086f00ddfe556ca5dd7c140c01fa0c56c0361448a50fcb"]
+            [0x00731540cd6060991D6B9C57CE295998d9bC2faB] =  Acceso.acceso_total;
 
+        //alice
         accesslista[0xcBED645B1C1a6254f1149Df51d3591c6B3803007]
             ["0xf73910ddb3e35a2db69926e7d422df45a52751d09bc99ceaed08ed2dd497930e"]
             [Acceso.acceso_total] = 
@@ -104,6 +117,12 @@ contract SCAccess is IIBCModule {
             ["0x66de0b546355b8dc6b244662365b8f75b20bddb2341fbd313a8492556d78c11e"]
             [Acceso.acceso_total] = 
             [0xcBED645B1C1a6254f1149Df51d3591c6B3803007, 0x4838B106FCe9647Bdf1E7877BF73cE8B0BAD5f97];
+
+        //bob
+        accesslista[0x00731540cd6060991D6B9C57CE295998d9bC2faB]
+            ["0x116ba6d1a2621ebd1f086f00ddfe556ca5dd7c140c01fa0c56c0361448a50fcb"]
+            [Acceso.acceso_total] = 
+            [0x00731540cd6060991D6B9C57CE295998d9bC2faB, 0x333343333CE9647Bdf1e7877bf73ce8b0Bad5F97];
         
     }
 
@@ -149,16 +168,12 @@ contract SCAccess is IIBCModule {
         return nonce_sign[user];
     }
 
-    //esta funcion es imposible porque los mappings solo pueden ser data allocation storage
-    //nada dinamico, ni returns ni almacenamiento en variables temporales ni nada.
-    function getAccessList(address holder) public returns (address[][][] memory){
-  //      require()
-  // quitar acceso de parametros
+    //
+    function getAccessList(address holder) public{
         string[] storage certificates = holdersEspejo[holder];
         
-        //address[] memory entidad;
-
         delete entidades;
+        delete entidades1cert;
 
         Acceso[4] memory tipo_de_acceso = [Acceso.acceso_total, Acceso.acceso_parcial, 
                 Acceso.acceso_usuario_y_terceros_total, Acceso.acceso_denegado];
@@ -172,11 +187,17 @@ contract SCAccess is IIBCModule {
             entidades.push(entidades1cert);
             delete entidades1cert;
         }
-        return entidades;
+        userEntidades[holder] = entidades;
+        
     }
 
-    function getEntidades() public view returns (address[][][] memory) {
-        return entidades;
+    function getEntidades(address holder, FirmaValidacion calldata firma) public view returns (address[][][] memory) {
+        address signer = _getSigner(firma);
+        require(firma._hashCodeCert == keccak256(abi.encodePacked(Strings.toString(nonce_sign[signer]))), "Invalid signer");
+        require(holder == signer, "Invalid signer. Msg signer is not the user requested.");
+
+        
+        return userEntidades[holder];
     }
 
 
