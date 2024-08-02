@@ -3,22 +3,32 @@ TRUFFLE ?= npx truffle
 TEST_OPTS ?= --compile-none --migrate-none
 
 # setup
-.PHONY: setup setup2 down
+.PHONY: setup setupPr setup2 down
 setup: build network sleep migrate 
-setup2: build2 sleep migrate2 handshake relayer-start
+setupPr: buildPr sleep migratePr
+setup2: build2 sleep migrate2 
+relayer01: handshake relayer-start
+#new!!
+#-anadir scstorage a ibc1 y handler mockclient...
+relayerPr1: handshakePr relayer-startPr 
+
 
 down: relayer-stop network-down
 
 # build
 .PHONY: build build-contract build-relayer 
 build: build-contract build-relayer build-container
-build2: build-contract2
+build2: build-contract2 
+buildPr: build-contractPr build-relayer
 
 build-contract:
 	@make -C ../../contracts/minitoken/solidity build
 
 build-contract2:
 	@make -C ../../contracts/minitoken/solidityB2 build2
+
+build-contractPr:
+	@make -C ../../contracts/minitoken/solidityPrivada buildPr
 
 build-relayer:
 	@make -C relayer build
@@ -40,14 +50,22 @@ migrate:
 	npm run migrate:ibc0
 migrate2:
 	npm run migrate:ibc1
+migratePr:
+	npm run migrate:ibc2
 
 # relayer
-.PHONY: handshake relayer-start relayer-stop
+.PHONY: handshake handshakePr relayer-start relayer-startPr relayer-stop
 handshake:
 	./scripts/init-rly
 
+handshakePr:
+	./scripts/init-rlyPr
+
 relayer-start:
 	./scripts/relayer-start
+
+relayer-startPr:
+	./scripts/relayer-startPr
 
 relayer-stop:
 	./scripts/relayer-stop

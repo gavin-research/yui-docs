@@ -1,5 +1,5 @@
 //const MiniToken = artifacts.require("MiniToken");
-const SCContrato = artifacts.require("SCData"); //Cambiar SCData <-> SCStorage
+const SCVolcado = artifacts.require("SCVolcado");
 const IBCClient = artifacts.require("@hyperledger-labs/yui-ibc-solidity/IBCClient");
 const IBCConnection = artifacts.require("@hyperledger-labs/yui-ibc-solidity/IBCConnection");
 const IBCChannelHandshake = artifacts.require("@hyperledger-labs/yui-ibc-solidity/IBCChannelHandshake");
@@ -22,7 +22,7 @@ const deployCore = async (deployer) => {
 
 const deployApp = async (deployer) => {
   //await deployer.deploy(MiniToken, IBCHandler.address);
-  await deployer.deploy(SCContrato, IBCHandler.address);
+  await deployer.deploy(SCVolcado, IBCHandler.address);
 };
 
 const init = async (deployer) => {
@@ -30,7 +30,7 @@ const init = async (deployer) => {
 
   for(const promise of [
     //() => ibcHandler.bindPort(PortTransfer, MiniToken.address),
-    () => ibcHandler.bindPort(PortTransfer, SCContrato.address),
+    () => ibcHandler.bindPort(PortTransfer, SCVolcado.address),
     () => ibcHandler.registerClient(MockClientType, MockClient.address),
   ]) {
     const result = await promise();

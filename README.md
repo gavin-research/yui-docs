@@ -17,6 +17,7 @@ Execute `npm install` in the following order on these directories to install dep
 
 - *contracts/minitoken/solidity*
 - *contracts/minitoken/solidityB2*
+- *contracts/minitoken/solidityPrivada*
 - *samples/minitoken-ethereum-ethereum*
 
 Once installed, first make sure that on:
@@ -30,9 +31,31 @@ The following variables are written referring to contract_dir as:
 
 Execute `make setup`
 
+After it make sure that in *contracts/minitoken/solidityB2/migrations/2-token_migration.js* the constant `const SCContrato = artifacts.require("SCData");` is like that, with SCData.
+
 After it, update  *samples/minitoken-ethereum-ethereum/truffle-config.js* changing `contract_dir` for `contract_dir2` on the variables from before.
 
 Execute `make setup2`
+
+Execute `make relayer01` so the relayer between ibc0 (SCAccess) and ibc1 (SCData) starts running.
+
+IN ANOTHER CONSOLE:
+
+After it, update  *samples/minitoken-ethereum-ethereum/truffle-config.js* changing `contract_dir2` for `contract_dir3` on the variables from before.
+
+Execute `make setupPr`
+
+After it make sure that in *contracts/minitoken/solidityB2/migrations/2-token_migration.js* the constant `const SCContrato = artifacts.require("SCStorage");` is like that, with SCStorage.
+
+After it, update  *samples/minitoken-ethereum-ethereum/truffle-config.js* changing `contract_dir3` for `contract_dir2` on the variables from before.
+
+Execute `make setup2`
+Write down the address of the contract OwnableIBCHandler showed in console during migrations when deployed.
+
+Go to `samples/minitoken/configs/relayer/demo/ibc-1.json` and change `"ibc_address":0x...` to that one.
+
+Execute `make relayerPr1` so the relayer between ibc2 (Privada) and ibc1 (SCData) starts running. 
+
 
 # Tests
 
@@ -40,7 +63,7 @@ Before executing the tests, make sure that you change back *samples/minitoken-et
 
 This is because all interactions are made from the Blockchain A, and Blockchain B will return values through the IBC without needing of an active party interacting with it on the other side.
 
-You can execute the following tests from *samples/minitoken-ethereum-ethereum* to check the functioning of the project:
+You can execute the following tests for the connection IBC0-IBC1 from *samples/minitoken-ethereum-ethereum* to check the functioning of the project:
 
 - `npx truffle exec test/0-grantaccess.js --network=ibc0`
 - `npx truffle exec test/1-send.js --network=ibc0`
@@ -48,6 +71,13 @@ You can execute the following tests from *samples/minitoken-ethereum-ethereum* t
 - `npx truffle test test/2-ibc1.test.js --network=ibc0 --compile-none --migrate-none`
 
 These tests allow first to give access to Bob to Alice salted hash. Then Bob sends a token from Blockchain A and it arrives to Blockchain B through the IBC. The salted hash is immediately returned to Blockchain A automatically through the same IBC, so the owner can see they have the salted hash now on Blockchain A.
+
+You can execute the following tests for the connection IBC2-IBC1 from *samples/minitoken-ethereum-ethereum* to check the functioning of the project:
+
+- `npx truffle exec test/9-volcado.js --network=ibc0`
+- `npx truffle test test/9-volcado.test.js --network=ibc0 --compile-none --migrate-none`
+
+These tests allow you to send a new issued certificate data from the private blockchain with SCVolcado to the IBC1 SCStorage.
 
 # YUI
 

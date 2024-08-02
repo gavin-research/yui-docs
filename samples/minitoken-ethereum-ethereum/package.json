@@ -6,8 +6,9 @@
     "postinstall": "npm run compile:ibc",
     "compile": "truffle compile",
     "compile:ibc": "cd node_modules/@hyperledger-labs/yui-ibc-solidity && truffle compile",
-    "migrate:ibc0": "truffle migrate --network=ibc0 --compile-none",
-    "migrate:ibc1": "truffle migrate --network=ibc1 --compile-none",
+    "migrate:ibc0": "truffle migrate --network=ibc0 --compile-none --reset",
+    "migrate:ibc1": "truffle migrate --network=ibc1 --compile-none --reset",
+    "migrate:ibc2": "truffle migrate --network=ibc2 --compile-none --reset",
     "fmt": "npx prettier --write 'test/**/*.js' 'truffle-config.js'"
   },
   "author": "Datachain, Inc.",

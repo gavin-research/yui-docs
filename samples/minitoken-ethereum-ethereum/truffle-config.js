@@ -27,6 +27,7 @@ var mnemonic =
 // const mnemonic = fs.readFileSync(".secret").toString().trim();
 
 const contract_dir = "./../../contracts/minitoken/solidity";
+const contract_dir3 = "./../../contracts/minitoken/solidityPrivada";
 const contract_dir2 = "./../../contracts/minitoken/solidityB2";
 
 
@@ -38,7 +39,7 @@ module.exports = {
    * run `develop` or `test`. You can ask a truffle command to use a specific
    * network from the command line, e.g
    *
-   * $ truffle test --network <network-name>
+   * $ truffle test --network <network-name> 
    */
   contracts_directory: contract_dir,
   contracts_build_directory: contract_dir + "/build/contracts",
@@ -68,6 +69,22 @@ module.exports = {
       provider: () =>
         new HDWalletProvider(mnemonic, "http://localhost:8745", 0, 10),
     },
+    ibc2: {
+      host: "127.0.0.1", // Localhost (default: none)
+      port: 8845, // Standard Ethereum port (default: none)
+      network_id: "*", // Any network (default: none)
+      networkCheckTimeout: 10000,
+      provider: () =>
+        new HDWalletProvider({
+          mnemonic: {
+            phrase: mnemonic,
+          },
+          providerOrUrl: "http://localhost:8845",
+          addressIndex: 0,
+          numberOfAddresses: 10,
+          pollingInterval: 8000, // Reducing socket hang up error
+        }),
+    }
   },
 
   // Set default mocha options here, use special reporters etc.
