@@ -104,6 +104,7 @@ contract SCAccess is IIBCModule {
         access["0x116ba6d1a2621ebd1f086f00ddfe556ca5dd7c140c01fa0c56c0361448a50fcb"]
             [0x00731540cd6060991D6B9C57CE295998d9bC2faB] =  Acceso.acceso_total;
 
+        //holder, certificado, nvl acceso, verifiers
         //alice
         accesslista[0xcBED645B1C1a6254f1149Df51d3591c6B3803007]
             ["0xf73910ddb3e35a2db69926e7d422df45a52751d09bc99ceaed08ed2dd497930e"]
@@ -212,7 +213,10 @@ contract SCAccess is IIBCModule {
         require(holders[certificate] == signer, "Invalid signer 2");
 
         nonce_sign[signer] = nonce_sign[signer] + 1;
+        //se anade a ambos mappings de acceso la nueva informacion
         access[certificate][entity] = accessvalue;
+        accesslista[signer][certificate][accessvalue].push(entity);
+
         emit ModifyAccess(
             entity,
             certificate,
