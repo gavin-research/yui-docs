@@ -213,8 +213,23 @@ contract SCAccess is IIBCModule {
         require(holders[certificate] == signer, "Invalid signer 2");
 
         nonce_sign[signer] = nonce_sign[signer] + 1;
-        //se anade a ambos mappings de acceso la nueva informacion
+        //se anade al mapping access la nueva informacion
         access[certificate][entity] = accessvalue;
+
+        //se borra el tipo de acceso previo en el array antes de guardar el nuevo
+        Acceso[4] memory tipo_de_acceso = [Acceso.acceso_total, Acceso.acceso_parcial, 
+                Acceso.acceso_usuario_y_terceros_total, Acceso.acceso_denegado];
+        for(uint j = 0; j < 4; j++){
+                Acceso acceso = tipo_de_acceso[j];
+                address[] memory entidad = accesslista[signer][certificate][acceso];
+                
+                for(uint i=0; i < entidad.length; i++){
+                    if(entidad[i] == entity){
+                        delete entidad[i];
+                    } 
+                }
+            }
+        //ya borrado el valor anterior, se anade al mapping accesslsita la nueva informacion   
         accesslista[signer][certificate][accessvalue].push(entity);
 
         emit ModifyAccess(
