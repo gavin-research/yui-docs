@@ -37,6 +37,12 @@ After it, update  *samples/minitoken-ethereum-ethereum/truffle-config.js* changi
 
 Execute `make setup2`
 
+Write down the address printed on console of SCData and write it on the line of SCStorage's comment "//SCDATA ADDRESS", in the constructor.
+
+Write down the address of the contract OwnableIBCHandler showed in console during migrations when deployed.
+
+Go to `samples/minitoken/configs/relayer/demo/ibc-1.json` and change `"ibc_address":0x...` to that one.
+
 Execute `make relayer01` so the relayer between ibc0 (SCAccess) and ibc1 (SCData) starts running.
 
 IN ANOTHER CONSOLE:
@@ -58,6 +64,7 @@ Execute `make relayerPr1` so the relayer between ibc2 (Privada) and ibc1 (SCData
 
 
 # Tests
+Open a new console.
 
 Before executing the tests, make sure that you change back *samples/minitoken-ethereum-ethereum/truffle-config.js* `contract_dir2` to `contract_dir` on the variables from before.
 
@@ -73,11 +80,16 @@ You can execute the following tests for the connection IBC0-IBC1 from *samples/m
 These tests allow first to give access to Bob to Alice salted hash. Then Bob sends a token from Blockchain A and it arrives to Blockchain B through the IBC. The salted hash is immediately returned to Blockchain A automatically through the same IBC, so the owner can see they have the salted hash now on Blockchain A.
 
 You can execute the following tests for the connection IBC2-IBC1 from *samples/minitoken-ethereum-ethereum* to check the functioning of the project:
+Before executing the tests, make sure that you change back *samples/minitoken-ethereum-ethereum/truffle-config.js* `contract_dir` to `contract_dir3` on the variables from before, because the tests are executed from the Private Blockchain.
 
-- `npx truffle exec test/9-volcado.js --network=ibc0`
-- `npx truffle test test/9-volcado.test.js --network=ibc0 --compile-none --migrate-none`
+- `npx truffle exec test/9-volcado.js --network=ibc2`
+
+Before executing this test, make sure that you change back *samples/minitoken-ethereum-ethereum/truffle-config.js* `contract_dir3` to `contract_dir2` on the variables from before, because the tests are executed from the Private Blockchain.
+- `npx truffle test test/9-volcado.test.js --network=ibc1 --compile-none --migrate-none`
 
 These tests allow you to send a new issued certificate data from the private blockchain with SCVolcado to the IBC1 SCStorage.
+
+An additional test `npx truffle exec test/00-mappingtest.js --network=ibc0` can be done to check the correct functioning of the mappings on the chain 0, updating first too *samples/minitoken-ethereum-ethereum/truffle-config.js* `contract_dir2` to `contract_dir`
 
 # YUI
 
