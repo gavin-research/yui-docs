@@ -113,7 +113,7 @@ contract SCData is IIBCModule {
         address receiver,
         string memory sourcePort,
         string memory sourceChannel,
-        uint64 timeoutHeight
+        uint64 timeoutHeight 
     ) internal {
        // require(_burn(msg.sender, message), "MiniMessage: failed to burn");
 
@@ -168,6 +168,14 @@ contract SCData is IIBCModule {
         return true;
     }
 
+    function receivenewcert(string memory _cert, bytes memory _code, address hold) external returns(bool){
+        certificate[_code] = _cert;
+        string memory codestr = string(abi.encodePacked("P0x", _code));
+        sendTransfer2(codestr, hold, "transfer", "channel-0", 0);
+
+        return true;
+    }
+
 
     function _cacneacall(bytes memory _mssg) internal returns (string memory) {
        (address account, bytes memory message_s) = abi.decode(_mssg, (address, bytes));
@@ -175,7 +183,7 @@ contract SCData is IIBCModule {
         //ignorar esta linea
         //string memory xana = string(abi.encodePacked(account));
 
-        _mensajin[account] = "evolucion completada";
+        _mensajin[account] = "sendtransfer completed";
             
         sendTransfer2(certificate[message_s], account, "transfer", "channel-0", 0);
       
