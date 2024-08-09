@@ -315,8 +315,28 @@ contract SCAccess is IIBCModule {
     //funcion que recibe un string, y en caso de que sea el esperado, ejecuta la funcion de envio
     //con el valor asociado
     function _cacneacall(bytes memory _mssg) internal returns (bool) {
+        // entei, que pasa si recibe de scstorage-scdata (address account, bytes memory )
         (address account, bytes memory message_s) = abi.decode(_mssg, (address, bytes));
         string memory data_s = string(message_s);
+        
+        //new! entei
+        bytes memory strBytes = bytes(data_s);
+        if (strBytes[0] == 'P') {
+            bytes memory result = new bytes(strBytes.length - 1);
+            for (uint i = 1; i < strBytes.length; i++) {
+                result[i - 1] = strBytes[i];
+            }
+            string memory newdata = string(result); //el code del certificado
+
+            //se guarda el code del certificado en holders y holdersEspejo
+            holders[newdata] = account;
+            holdersEspejo[account].push(newdata);
+            //se anade al holder del certificado con acceso total sobre el mismo
+            access[newdata][account] = Acceso.acceso_total;
+            accesslista[account][newdata][Acceso.acceso_total].push(account);
+           
+
+        }else{      
        
         if(keccak256(abi.encodePacked(data_s)) != keccak256(abi.encodePacked("FAILED"))){
            _mensajin[account] = data_s;
@@ -324,9 +344,9 @@ contract SCAccess is IIBCModule {
         }else{
            _mensajin[account] = "Permission = False";
         }
-
-        emit Cacneacall(account, message_s);
         
+        }
+        emit Cacneacall(account, message_s);
         return true; //este return esta para comprobaciones, podria devolver un true y ya o nada
     }
 
