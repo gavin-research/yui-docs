@@ -15,24 +15,28 @@ contract SCStorage is IIBCModule {
     //mapping codigo del certificado - holder
     mapping(string => address) private holders; 
     //mapping codigo - superhash
-    mapping (string => string) public certificate;
+    mapping (bytes => string) public certificate;
+
+    // direccion de scdata para call()
+    address scdataaddr;
  
 
     constructor(IBCHandler ibcHandler_) public {
         owner = msg.sender;
 
         ibcHandler = ibcHandler_;
-
-      
+        scdataaddr = 0xff77D90D6aA12db33d3Ba50A34fB25401f6e4c4F; //SCDATA ADDRESS
 
     }
 
-    event StoreCertificate(string certificate, string code);
+    event StoreCertificate(string certificate, bytes code);
     event Mint(address indexed to, string message);
 
     event Cacneacall(address indexed to, bytes message);
 
     event Transfer(address indexed from, address indexed to, string message);
+
+    event Response(bool success, bytes data);
 
     event SendTransfer(
         address indexed from,
@@ -64,14 +68,21 @@ contract SCStorage is IIBCModule {
 ////
     function storeCertificate(
         string memory _certificate,
-        string memory _code,
+        bytes memory _code,
         address _holder) internal{
             certificate[_code] = _certificate;
             holders[_certificate] = _holder;
             emit StoreCertificate(_certificate, _code);
+
+            (bool success, bytes memory data) = scdataaddr.call{
+                gas: 5000
+             }(abi.encodeWithSignature("receivenewcert(string,bytes,address)", 
+                                _certificate, _code, _holder));
+
+             emit Response(success, data);
     }
 
-    function getCertificate(string calldata _codigo) public view returns(string memory){
+    function getCertificate(bytes calldata _codigo) public view returns(string memory){
         return certificate[_codigo];
     }
 
@@ -120,7 +131,7 @@ contract SCStorage is IIBCModule {
         bytes memory message_s = abi.encode(data.receiver.toAddress(0), data.message); 
         
         //Separar los dos strings, para almacenar el certificado y el codigo llamando a storeCertificate()
-        (string memory certificado, string memory code) = abi.decode(bytes(data.message), (string, string));
+        (string memory certificado, bytes memory code) = abi.decode(bytes(data.message), (string, bytes));
        
         //Almacena el certificado y el codigo y el holder
         storeCertificate(certificado, code, data.receiver.toAddress(0));
