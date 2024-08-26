@@ -29,7 +29,6 @@ var mnemonic =
 const contract_dir = "./../../contracts/minitoken/solidity";
 const contract_dir2 = "./../../contracts/minitoken/solidityB2";
 
-
 module.exports = {
   /**
    * Networks define how you connect to your ethereum client and let you set the
@@ -43,6 +42,10 @@ module.exports = {
   contracts_directory: contract_dir,
   contracts_build_directory: contract_dir + "/build/contracts",
   migrations_directory: contract_dir + "/migrations",
+
+  // contracts_directory: contract_dir2,
+  // contracts_build_directory: contract_dir2 + "/build/contracts",
+  // migrations_directory: contract_dir2 + "/migrations",
 
   networks: {
     ibc0: {
@@ -89,5 +92,5 @@ module.exports = {
         //  evmVersion: "byzantium"
       },
     },
-  }
+  },
 };

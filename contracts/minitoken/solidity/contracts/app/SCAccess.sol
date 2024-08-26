@@ -14,7 +14,7 @@ contract SCAccess is IIBCModule {
 
     address private owner;
 
-    enum Acceso{
+    enum Acceso {
         no_registro, // por defecto
         acceso_total, //acceso mediante caso 1, usuario-tercero
         acceso_parcial, //acceso mediante caso 2, usuario-tercero info parcial
@@ -28,20 +28,21 @@ contract SCAccess is IIBCModule {
     address[][][] public entidades;
 
     //mapping codigo del certificado - holder
-    mapping(string => address) private holders; 
+    mapping(string => address) private holders;
     //mapping espejo del anterior para el getAccessList
     //Si usamos array hay que iterar. Si recorremos el mapping anterior por valor para sacar key tambien.
     //Iterar sobre algo de tamano desconocido puede consumir toda la memoria del bloque.
     mapping(address => string[]) public holdersEspejo;
     //mapping codigo - verifier - permisos de acceso
-    mapping (string => mapping(address => Acceso)) public access;
+    mapping(string => mapping(address => Acceso)) public access;
     //mapping provisional verifier - ultima superhash recibida
     mapping(address => string) private _mensajin;
     //mapping usuario - nonce para firmas
-    mapping(address => uint256) private nonce_sign; 
+    mapping(address => uint256) private nonce_sign;
 
     mapping(address => mapping(address => Acceso)) public accesslist;
-    mapping(address => mapping(string => mapping(Acceso => address[]))) public accesslista;
+    mapping(address => mapping(string => mapping(Acceso => address[])))
+        public accesslista;
     mapping(address => address[][][]) public userEntidades;
 
     struct FirmaValidacion {
@@ -52,8 +53,8 @@ contract SCAccess is IIBCModule {
     }
 
     struct RelayerParams {
-        string  sourcePort;
-        string  sourceChannel;
+        string sourcePort;
+        string sourceChannel;
         uint64 timeoutHeight;
     }
 
@@ -63,70 +64,79 @@ contract SCAccess is IIBCModule {
         ibcHandler = ibcHandler_;
 
         //alice es holder de cert1 Cheddar
-        holders["0xf73910ddb3e35a2db69926e7d422df45a52751d09bc99ceaed08ed2dd497930e"]=
-        0xcBED645B1C1a6254f1149Df51d3591c6B3803007;
-        
+        holders[
+            "0xf73910ddb3e35a2db69926e7d422df45a52751d09bc99ceaed08ed2dd497930e"
+        ] = 0xEca8bB9Be63164Ff5b9F1e0a3a6fC8b369E8455F;
+
         //alice es holder de cert2 Glasha
-        holders["0x66de0b546355b8dc6b244662365b8f75b20bddb2341fbd313a8492556d78c11e"]=
-        0xcBED645B1C1a6254f1149Df51d3591c6B3803007;
+        holders[
+            "0x66de0b546355b8dc6b244662365b8f75b20bddb2341fbd313a8492556d78c11e"
+        ] = 0xEca8bB9Be63164Ff5b9F1e0a3a6fC8b369E8455F;
 
         //bob es holder de cert3 Moon
-        holders["0x116ba6d1a2621ebd1f086f00ddfe556ca5dd7c140c01fa0c56c0361448a50fcb"]=
-        0x00731540cd6060991D6B9C57CE295998d9bC2faB;
-
-
+        holders[
+            "0x116ba6d1a2621ebd1f086f00ddfe556ca5dd7c140c01fa0c56c0361448a50fcb"
+        ] = 0x100637B66399A7f7324C77233012C563176F31F1;
 
         //espejo del anterior con lista de certificados que posee
-        //CADA VEZ QUE SE VUELQUE LA INFORMACION VA A ESTAR DUPLICADA 
-        holdersEspejo[0xcBED645B1C1a6254f1149Df51d3591c6B3803007]=
-        ["0xf73910ddb3e35a2db69926e7d422df45a52751d09bc99ceaed08ed2dd497930e",
-        "0x66de0b546355b8dc6b244662365b8f75b20bddb2341fbd313a8492556d78c11e"];
+        //CADA VEZ QUE SE VUELQUE LA INFORMACION VA A ESTAR DUPLICADA
+        holdersEspejo[0xEca8bB9Be63164Ff5b9F1e0a3a6fC8b369E8455F] = [
+            "0xf73910ddb3e35a2db69926e7d422df45a52751d09bc99ceaed08ed2dd497930e",
+            "0x66de0b546355b8dc6b244662365b8f75b20bddb2341fbd313a8492556d78c11e"
+        ];
 
-        holdersEspejo[0x00731540cd6060991D6B9C57CE295998d9bC2faB]=
-        ["0x116ba6d1a2621ebd1f086f00ddfe556ca5dd7c140c01fa0c56c0361448a50fcb"];
- 
+        holdersEspejo[0x100637B66399A7f7324C77233012C563176F31F1] = [
+            "0x116ba6d1a2621ebd1f086f00ddfe556ca5dd7c140c01fa0c56c0361448a50fcb"
+        ];
 
-
-    //////////////////////////////////////////////////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////////////////////////////
 
         //alice puede acceder al certificado Cheddar con esta clave, la clave 1.1
-        access["0xf73910ddb3e35a2db69926e7d422df45a52751d09bc99ceaed08ed2dd497930e"]
-            [0xcBED645B1C1a6254f1149Df51d3591c6B3803007] =  Acceso.acceso_total;
+        access[
+            "0xf73910ddb3e35a2db69926e7d422df45a52751d09bc99ceaed08ed2dd497930e"
+        ][0xEca8bB9Be63164Ff5b9F1e0a3a6fC8b369E8455F] = Acceso.acceso_total;
 
         //alice puede acceder al certificado Glasha con esta clave, la clave 1.2
-        access["0x66de0b546355b8dc6b244662365b8f75b20bddb2341fbd313a8492556d78c11e"]
-            [0xcBED645B1C1a6254f1149Df51d3591c6B3803007] = Acceso.acceso_total;
+        access[
+            "0x66de0b546355b8dc6b244662365b8f75b20bddb2341fbd313a8492556d78c11e"
+        ][0xEca8bB9Be63164Ff5b9F1e0a3a6fC8b369E8455F] = Acceso.acceso_total;
 
         //bob no puede acceder a nada de alice hasta que alice no le de acceso
         ////
 
         //bob puede acceder al certificado Moon con esta clave, la clave 2.1
-        access["0x116ba6d1a2621ebd1f086f00ddfe556ca5dd7c140c01fa0c56c0361448a50fcb"]
-            [0x00731540cd6060991D6B9C57CE295998d9bC2faB] =  Acceso.acceso_total;
+        access[
+            "0x116ba6d1a2621ebd1f086f00ddfe556ca5dd7c140c01fa0c56c0361448a50fcb"
+        ][0x100637B66399A7f7324C77233012C563176F31F1] = Acceso.acceso_total;
 
         //alice
-        accesslista[0xcBED645B1C1a6254f1149Df51d3591c6B3803007]
-            ["0xf73910ddb3e35a2db69926e7d422df45a52751d09bc99ceaed08ed2dd497930e"]
-            [Acceso.acceso_total] = 
-            [0xcBED645B1C1a6254f1149Df51d3591c6B3803007, 0xa89F47C6b463f74d87572b058427dA0A13ec5425];
-        accesslista[0xcBED645B1C1a6254f1149Df51d3591c6B3803007]
-            ["0xf73910ddb3e35a2db69926e7d422df45a52751d09bc99ceaed08ed2dd497930e"]
-            [Acceso.acceso_parcial] =
-            [0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5, 0x478D97356251BF1F1e744587E67207dAb100CaDb];
-        accesslista[0xcBED645B1C1a6254f1149Df51d3591c6B3803007]
-            ["0x66de0b546355b8dc6b244662365b8f75b20bddb2341fbd313a8492556d78c11e"]
-            [Acceso.acceso_total] = 
-            [0xcBED645B1C1a6254f1149Df51d3591c6B3803007, 0x4838B106FCe9647Bdf1E7877BF73cE8B0BAD5f97];
+        accesslista[0xEca8bB9Be63164Ff5b9F1e0a3a6fC8b369E8455F][
+            "0xf73910ddb3e35a2db69926e7d422df45a52751d09bc99ceaed08ed2dd497930e"
+        ][Acceso.acceso_total] = [
+            0xEca8bB9Be63164Ff5b9F1e0a3a6fC8b369E8455F,
+            0xa89F47C6b463f74d87572b058427dA0A13ec5425
+        ];
+        accesslista[0xEca8bB9Be63164Ff5b9F1e0a3a6fC8b369E8455F][
+            "0xf73910ddb3e35a2db69926e7d422df45a52751d09bc99ceaed08ed2dd497930e"
+        ][Acceso.acceso_parcial] = [
+            0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5,
+            0x478D97356251BF1F1e744587E67207dAb100CaDb
+        ];
+        accesslista[0xEca8bB9Be63164Ff5b9F1e0a3a6fC8b369E8455F][
+            "0x66de0b546355b8dc6b244662365b8f75b20bddb2341fbd313a8492556d78c11e"
+        ][Acceso.acceso_total] = [
+            0xEca8bB9Be63164Ff5b9F1e0a3a6fC8b369E8455F,
+            0x4838B106FCe9647Bdf1E7877BF73cE8B0BAD5f97
+        ];
 
         //bob
-        accesslista[0x00731540cd6060991D6B9C57CE295998d9bC2faB]
-            ["0x116ba6d1a2621ebd1f086f00ddfe556ca5dd7c140c01fa0c56c0361448a50fcb"]
-            [Acceso.acceso_total] = 
-            [0x00731540cd6060991D6B9C57CE295998d9bC2faB, 0x333343333CE9647Bdf1e7877bf73ce8b0Bad5F97];
-        
+        accesslista[0x100637B66399A7f7324C77233012C563176F31F1][
+            "0x116ba6d1a2621ebd1f086f00ddfe556ca5dd7c140c01fa0c56c0361448a50fcb"
+        ][Acceso.acceso_total] = [
+            0x100637B66399A7f7324C77233012C563176F31F1,
+            0x333343333CE9647Bdf1e7877bf73ce8b0Bad5F97
+        ];
     }
-
-
 
     event Mint(address indexed to, string message);
 
@@ -134,12 +144,21 @@ contract SCAccess is IIBCModule {
 
     event Transfer(address indexed from, address indexed to, string message);
 
-    event ModifyAccess(address indexed entity, string certificate, Acceso access);
+    event ModifyAccess(
+        address indexed entity,
+        string certificate,
+        Acceso access
+    );
 
     event NonceSign(uint256 nonce);
 
-//cacnea borrar, es pa pruebas
-    event EventoCacnea(bytes32 firmaHashCode, bytes32 abiFirmaHashCode, bytes noncebytes,uint256 nonce);
+    //cacnea borrar, es pa pruebas
+    event EventoCacnea(
+        bytes32 firmaHashCode,
+        bytes32 abiFirmaHashCode,
+        bytes noncebytes,
+        uint256 nonce
+    );
 
     event SendTransfer(
         address indexed from,
@@ -148,6 +167,12 @@ contract SCAccess is IIBCModule {
         string sourceChannel,
         uint64 timeoutHeight,
         string message
+    );
+
+    event CertEntites(
+        address from,
+        string[] certsAddress,
+        address[][][] accessList
     );
 
     modifier onlyOwner() {
@@ -163,68 +188,117 @@ contract SCAccess is IIBCModule {
         _;
     }
 
-
-    function getNonce(address user) public view returns (uint256){
+    function getNonce(address user) public view returns (uint256) {
         return nonce_sign[user];
     }
 
-    //
-    function getAccessList(address holder) public{
+    function getAccessList(address holder) public {
         string[] storage certificates = holdersEspejo[holder];
-        
+
         delete entidades;
         delete entidades1cert;
 
-        Acceso[4] memory tipo_de_acceso = [Acceso.acceso_total, Acceso.acceso_parcial, 
-                Acceso.acceso_usuario_y_terceros_total, Acceso.acceso_denegado];
+        Acceso[4] memory tipo_de_acceso = [
+            Acceso.acceso_total,
+            Acceso.acceso_parcial,
+            Acceso.acceso_usuario_y_terceros_total,
+            Acceso.acceso_denegado
+        ];
 
-        for(uint256 i = 0; i < certificates.length; i++){
-            for(uint j = 0; j < 4; j++){
+        for (uint256 i = 0; i < certificates.length; i++) {
+            for (uint j = 0; j < 4; j++) {
                 Acceso acceso = tipo_de_acceso[j];
-                address[] memory entidad = accesslista[holder][certificates[i]][acceso];
+                address[] memory entidad = accesslista[holder][certificates[i]][
+                    acceso
+                ];
                 entidades1cert.push(entidad);
             }
             entidades.push(entidades1cert);
             delete entidades1cert;
         }
         userEntidades[holder] = entidades;
-        
     }
 
-    function getEntidades(address holder, FirmaValidacion calldata firma) public view returns (address[][][] memory) {
+    function getEntidades(
+        address from,
+        FirmaValidacion calldata firma
+    ) public returns (address[][][] memory) {
         address signer = _getSigner(firma);
-        require(firma._hashCodeCert == keccak256(abi.encodePacked(Strings.toString(nonce_sign[signer]))), "Invalid signer");
-        require(holder == signer, "Invalid signer. Msg signer is not the user requested.");
+        require(
+            firma._hashCodeCert ==
+                keccak256(
+                    abi.encodePacked(Strings.toString(nonce_sign[signer]))
+                ),
+            "Invalid signer"
+        );
+        require(
+            from == signer,
+            "Invalid signer. Msg signer is not the user requested."
+        );
 
-        
-        return userEntidades[holder];
+        emit CertEntites(from, holdersEspejo[from], userEntidades[from]);
+
+        return userEntidades[from];
     }
 
-
-     function modifyAccess(
+    function modifyAccess(
+        address from,
         address entity,
         string memory certificate,
         FirmaValidacion calldata firma,
         Acceso accessvalue
     ) external {
         address signer = _getSigner(firma);
-        require(firma._hashCodeCert == keccak256(abi.encodePacked(Strings.toString(nonce_sign[signer]))), "Invalid signer");
+        require(
+            firma._hashCodeCert ==
+                keccak256(
+                    abi.encodePacked(Strings.toString(nonce_sign[signer]))
+                ),
+            "Invalid signer"
+        );
         require(holders[certificate] == signer, "Invalid signer 2");
 
         nonce_sign[signer] = nonce_sign[signer] + 1;
+        //se anade al mapping access la nueva informacion
         access[certificate][entity] = accessvalue;
-        emit ModifyAccess(
-            entity,
-            certificate,
-            accessvalue);
+
+        //se borra el tipo de acceso previo en el array antes de guardar el nuevo
+        Acceso[4] memory tipo_de_acceso = [
+            Acceso.acceso_total,
+            Acceso.acceso_parcial,
+            Acceso.acceso_usuario_y_terceros_total,
+            Acceso.acceso_denegado
+        ];
+        for (uint j = 0; j < 4; j++) {
+            Acceso acceso = tipo_de_acceso[j];
+            address[] memory entidad = accesslista[signer][certificate][acceso];
+
+            for (uint i = 0; i < entidad.length; i++) {
+                if (entidad[i] == entity) {
+                    delete entidad[i];
+                }
+            }
+        }
+        //ya borrado el valor anterior, se anade al mapping accesslsita la nueva informacion
+        accesslista[signer][certificate][accessvalue].push(entity);
+
+        emit ModifyAccess(entity, certificate, accessvalue);
     }
 
-
-     function _getSigner(FirmaValidacion memory firma) internal pure returns (address) {
+    function _getSigner(
+        FirmaValidacion memory firma
+    ) internal pure returns (address) {
         bytes memory prefix = "\x19Ethereum Signed Message:\n32";
-        bytes32 prefixedHashMessage = keccak256(abi.encodePacked(prefix, firma._hashCodeCert));
-        address signer = ecrecover(prefixedHashMessage, firma._v, firma._r, firma._s);
-        
+        bytes32 prefixedHashMessage = keccak256(
+            abi.encodePacked(prefix, firma._hashCodeCert)
+        );
+        address signer = ecrecover(
+            prefixedHashMessage,
+            firma._v,
+            firma._r,
+            firma._s
+        );
+
         return signer;
     }
 
@@ -235,17 +309,26 @@ contract SCAccess is IIBCModule {
         FirmaValidacion calldata firma
     ) external {
         address signer = _getSigner(firma);
-        require(firma._hashCodeCert == keccak256(abi.encodePacked(Strings.toString(nonce_sign[signer]))), "Invalid signer");
-        
+        require(
+            firma._hashCodeCert ==
+                keccak256(
+                    abi.encodePacked(Strings.toString(nonce_sign[signer]))
+                ),
+            "Invalid signer"
+        );
+
         nonce_sign[signer] = nonce_sign[signer] + 1;
 
-        if((access[message][signer] == Acceso.acceso_total) || 
-            (access[message][signer] == Acceso.acceso_parcial) || 
-            (access[message][signer] == Acceso.acceso_usuario_y_terceros_total) ||
-            (holders[message] == signer)){
+        if (
+            (access[message][signer] == Acceso.acceso_total) ||
+            (access[message][signer] == Acceso.acceso_parcial) ||
+            (access[message][signer] ==
+                Acceso.acceso_usuario_y_terceros_total) ||
+            (holders[message] == signer)
+        ) {
             _sendPacket(
                 MiniMessagePacketData.Data({
-                    message: message, 
+                    message: message,
                     sender: abi.encodePacked(signer),
                     receiver: abi.encodePacked(receiver)
                 }),
@@ -261,19 +344,14 @@ contract SCAccess is IIBCModule {
                 param.timeoutHeight,
                 message
             );
-
-        }else{
+        } else {
             _mensajin[msg.sender] = "NO ACCESS TO CERTIFICATION";
         }
     }
 
-
     function mint(address account, string memory message) external onlyOwner {
         require(_mint(account, message));
     }
-
-    
-
 
     function transfer(address to, string memory message) external {
         bool res;
@@ -286,38 +364,48 @@ contract SCAccess is IIBCModule {
         return _mensajin[account];
     }
 
-    function _mint(address account, string memory message) internal returns (bool) {
+    function _mint(
+        address account,
+        string memory message
+    ) internal returns (bool) {
         _mensajin[account] = message; //cacnea
         emit Mint(account, message);
         return true;
     }
 
-
     //funcion que recibe un string, y en caso de que sea el esperado, ejecuta la funcion de envio
     //con el valor asociado
     function _cacneacall(bytes memory _mssg) internal returns (bool) {
-        (address account, bytes memory message_s) = abi.decode(_mssg, (address, bytes));
+        (address account, bytes memory message_s) = abi.decode(
+            _mssg,
+            (address, bytes)
+        );
         string memory data_s = string(message_s);
-       
-        if(keccak256(abi.encodePacked(data_s)) != keccak256(abi.encodePacked("FAILED"))){
-           _mensajin[account] = data_s;
 
-        }else{
-           _mensajin[account] = "Permission = False";
+        if (
+            keccak256(abi.encodePacked(data_s)) !=
+            keccak256(abi.encodePacked("FAILED"))
+        ) {
+            _mensajin[account] = data_s;
+        } else {
+            _mensajin[account] = "Permission = False";
         }
 
         emit Cacneacall(account, message_s);
-        
+
         return true; //este return esta para comprobaciones, podria devolver un true y ya o nada
     }
 
-
-    function _transfer( //cacnea
+    function _transfer(
+        //cacnea
         address from,
         address to,
         string memory message
     ) internal returns (bool, string memory) {
-        if (keccak256(abi.encodePacked(_mensajin[from] )) != keccak256(abi.encodePacked(message))) {
+        if (
+            keccak256(abi.encodePacked(_mensajin[from])) !=
+            keccak256(abi.encodePacked(message))
+        ) {
             return (false, "MiniMessage: Ese mensajin no esta");
         }
         _mensajin[from] = "";
@@ -328,19 +416,19 @@ contract SCAccess is IIBCModule {
 
     /// Module callbacks ///
 
-    function onRecvPacket(Packet.Data calldata packet, address relayer)
-        external
-        virtual
-        override
-        onlyIBC
-        returns (bytes memory acknowledgement)
-    {
+    function onRecvPacket(
+        Packet.Data calldata packet,
+        address relayer
+    ) external virtual override onlyIBC returns (bytes memory acknowledgement) {
         MiniMessagePacketData.Data memory data = MiniMessagePacketData.decode(
             packet.data
         );
         //(address sendercontrato, string memory mensajillo) = abi.decode(data.message, (address, string));
-        bytes memory message_s = abi.encode(data.receiver.toAddress(0), data.message); //aqui mandaria mensajillo en vez de data.message 
-        
+        bytes memory message_s = abi.encode(
+            data.receiver.toAddress(0),
+            data.message
+        ); //aqui mandaria mensajillo en vez de data.message
+
         //en el momento en el que la Blockchain 2 recibe un string, se invoca a cacneacall,
         //funcion provisional que simplifica el proceso de volver a invocar
         //la funcion de envio en caso de que haya recibido un codigo correcto
@@ -348,10 +436,9 @@ contract SCAccess is IIBCModule {
 
         bool respuesta = _cacneacall(message_s);
 
-        return(_newAcknowledgement(respuesta));
-            //_newAcknowledgement(_cacneacall(data.receiver.toAddress(0), data.message));
+        return (_newAcknowledgement(respuesta));
+        //_newAcknowledgement(_cacneacall(data.receiver.toAddress(0), data.message));
     }
-
 
     function onAcknowledgementPacket(
         Packet.Data calldata packet,
@@ -407,14 +494,14 @@ contract SCAccess is IIBCModule {
 
     //Envia un paquete de datos (creado con la libreria PacketMssg)
     //por el canal especificado hasta la Blockchain B.
-    //El enpaquetado se hace en bytes, la libreria ya la modificamos en el 
-    //"paso anterior" de int a string para que cuente los saltos a dar para 
+    //El enpaquetado se hace en bytes, la libreria ya la modificamos en el
+    //"paso anterior" de int a string para que cuente los saltos a dar para
     //desenpaquetar correctamente. Es Packetmssg.sol, en ../lib
 
-    //No tienes que preocuparte por canales ni puertos, usamos los 
+    //No tienes que preocuparte por canales ni puertos, usamos los
     //de serie de YUI original, son muchas librerias y mejor no tocarlo
     function _sendPacket(
-        MiniMessagePacketData.Data memory data, 
+        MiniMessagePacketData.Data memory data,
         string memory sourcePort,
         string memory sourceChannel,
         uint64 timeoutHeight
@@ -444,12 +531,9 @@ contract SCAccess is IIBCModule {
         );
     }
 
-    function _newAcknowledgement(bool success)
-        internal
-        pure
-        virtual
-        returns (bytes memory)
-    {
+    function _newAcknowledgement(
+        bool success
+    ) internal pure virtual returns (bytes memory) {
         bytes memory acknowledgement = new bytes(1);
         if (success) {
             acknowledgement[0] = 0x01;
@@ -459,31 +543,26 @@ contract SCAccess is IIBCModule {
         return acknowledgement;
     }
 
-    function _isSuccessAcknowledgement(bytes memory acknowledgement)
-        internal
-        pure
-        virtual
-        returns (bool)
-    {
+    function _isSuccessAcknowledgement(
+        bytes memory acknowledgement
+    ) internal pure virtual returns (bool) {
         require(acknowledgement.length == 1);
         return acknowledgement[0] == 0x01;
     }
 
-//no aplica
-    function _refundTokens(MiniMessagePacketData.Data memory data)
-        internal
-        virtual
-    {
+    //no aplica
+    function _refundTokens(
+        MiniMessagePacketData.Data memory data
+    ) internal virtual {
         require(_mint(data.sender.toAddress(0), data.message));
     }
 }
 
+//Nota Fun Fact:
+//Cacnea es un Pokemon que evoluciona a Cacturne. Empece a usarlo como mi "to do" en
+//el TFG para no confundirlo con la palabra todo (all) en espanol.
+//Evoluciono a meme interno y ahora ya lo meto en todas partes.
 
-        //Nota Fun Fact:
-        //Cacnea es un Pokemon que evoluciona a Cacturne. Empece a usarlo como mi "to do" en
-        //el TFG para no confundirlo con la palabra todo (all) en espanol.
-        //Evoluciono a meme interno y ahora ya lo meto en todas partes.
-
-        //Aqui seria mas fitting poner un Pokemon que evoluciona por intercambio
-        //por eso de que pasa de una blockchain a otra, como Haunter a Gengar,
-        //pero es lo que hay. Cacnea.
+//Aqui seria mas fitting poner un Pokemon que evoluciona por intercambio
+//por eso de que pasa de una blockchain a otra, como Haunter a Gengar,
+//pero es lo que hay. Cacnea.
