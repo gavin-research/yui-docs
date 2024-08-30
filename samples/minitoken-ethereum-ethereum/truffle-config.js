@@ -39,13 +39,13 @@ module.exports = {
    *
    * $ truffle test --network <network-name>
    */
-  contracts_directory: contract_dir,
-  contracts_build_directory: contract_dir + "/build/contracts",
-  migrations_directory: contract_dir + "/migrations",
+  // contracts_directory: contract_dir,
+  // contracts_build_directory: contract_dir + "/build/contracts",
+  // migrations_directory: contract_dir + "/migrations",
 
-  // contracts_directory: contract_dir2,
-  // contracts_build_directory: contract_dir2 + "/build/contracts",
-  // migrations_directory: contract_dir2 + "/migrations",
+  contracts_directory: contract_dir2,
+  contracts_build_directory: contract_dir2 + "/build/contracts",
+  migrations_directory: contract_dir2 + "/migrations",
 
   networks: {
     ibc0: {
