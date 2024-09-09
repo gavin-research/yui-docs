@@ -12,15 +12,18 @@ contract SCData is IIBCModule {
 
     address private owner;
 
-    mapping (bytes => mapping(address => bool)) public access;
-
+    //mapping que asocia cada codigo a su hash salteado y cifrado
     mapping (bytes => string) public certificate;
+
+    //mapping verificador - ultima hash salteada cifrada recibida para la verificacion
+    mapping(address => string) private _mensajin;
 
     constructor(IBCHandler ibcHandler_) public {
         owner = msg.sender;
 
         ibcHandler = ibcHandler_;
 
+// datos para facilitar pruebas
         //codigo-certificado Cheddar
         certificate["0xf73910ddb3e35a2db69926e7d422df45a52751d09bc99ceaed08ed2dd497930e"] = 
         "f377e3d8d733de42ec0069766cc8f10b1c5b0b9da03298eea13b196aca6b99e4";
@@ -34,7 +37,7 @@ contract SCData is IIBCModule {
 
     event Mint(address indexed to, string message);
 
-    event Cacneacall(address indexed to, bytes message);
+    event Gavincall(address indexed to, bytes message);
 
     event Burn(address indexed from, string message);
 
@@ -74,11 +77,8 @@ contract SCData is IIBCModule {
     
     //sendTransfer contiene:
     // el mensaje: un string desde la version anterior
-    // una address, del receptor. Aqui la address es la del usuario que recibe el mensaje. 
-    //     En este caso es todo el rato la misma cuenta, "alice" en los tests.
-    //     Esto es porque es el sender y el receiver, envia la solicitud con el codigo y ha de
-    //     de recibir luego el dato solicitado
-    //
+    // una address, del receptor. Aqui la address es la del verificador que solicita el dato. 
+    // el resto de parametros refieren al canal del relayer empleado para enviar la informacion
     function sendTransfer(
         string memory message,
         address receiver,
@@ -86,8 +86,6 @@ contract SCData is IIBCModule {
         string calldata sourceChannel,
         uint64 timeoutHeight
     ) external {
-        //require(_burn(msg.sender, message), "MiniMessage: failed to burn");
-
         _sendPacket(
             MiniMessagePacketData.Data({
                 message: message, 
@@ -115,8 +113,6 @@ contract SCData is IIBCModule {
         string memory sourceChannel,
         uint64 timeoutHeight 
     ) internal {
-       // require(_burn(msg.sender, message), "MiniMessage: failed to burn");
-
         _sendPacket(
             MiniMessagePacketData.Data({
                 message: message, 
@@ -138,15 +134,12 @@ contract SCData is IIBCModule {
     }
 
 
-    mapping(address => string) private _mensajin;
-
+    
+    //unused functions on this project burn, mint
     function mint(address account, string memory message) external onlyOwner {
         require(_mint(account, message));
     }
 
-    
-    //no te preocupes por las funciones de burn, balanceof, mint, no aplican aqui, las conservamos
-    //de cuando se usaba un int, en YUI original minitoken
     function burn(string memory message) external {
         require(_burn(msg.sender, message), "MiniMessage: failed to burn");
     }
@@ -168,6 +161,11 @@ contract SCData is IIBCModule {
         return true;
     }
 
+//funcion que se llama desde SCStorage mediante call() para almacenar nuevos datos recibidos desde
+//las blockchains privadas 
+//Para diferenciar en SCAccess el origen del dato y como tratarlo, se codifica
+//la informacion emitida aqui, originaria de SCStorage (y por lo tanto de SCVolcado en las
+//blockchains privadas) con el prefijo "P0x".
     function receivenewcert(string memory _cert, bytes memory _code, address hold) external returns(bool){
         certificate[_code] = _cert;
         string memory codestr = string(abi.encodePacked("P0x", _code));
@@ -176,12 +174,10 @@ contract SCData is IIBCModule {
         return true;
     }
 
-
-    function _cacneacall(bytes memory _mssg) internal returns (string memory) {
+//funcion de envio de la informacion automaticamente de vuelta a la cadena de acceso
+    function _gavincall(bytes memory _mssg) internal returns (string memory) {
        (address account, bytes memory message_s) = abi.decode(_mssg, (address, bytes));
         string memory data_s = string(message_s);
-        //ignorar esta linea
-        //string memory xana = string(abi.encodePacked(account));
 
         _mensajin[account] = "sendtransfer completed";
             
@@ -189,19 +185,18 @@ contract SCData is IIBCModule {
       
         emit Burn(account, "hola");
         
-        emit Cacneacall(account, message_s);
+        emit Gavincall(account, message_s);
         
-        return "cacturne"; //este return esta para comprobaciones, podria devolver un true y ya o nada
+        return "ok"; 
     
     }
 
     function _burn(address account, string memory message) internal returns (bool) {        
-       // _mensajin[account] = "";
         emit Burn(account, message);
         return true;
     }
 
-    function _transfer( //cacnea
+    function _transfer( 
         address from,
         address to,
         string memory message
@@ -215,8 +210,7 @@ contract SCData is IIBCModule {
         return (true, "");
     }
 
-    /// Module callbacks ///
-
+    //funcion para la recepcion de datos. 
     function onRecvPacket(Packet.Data calldata packet, address relayer)
         external
         virtual
@@ -227,25 +221,22 @@ contract SCData is IIBCModule {
         MiniMessagePacketData.Data memory data = MiniMessagePacketData.decode(
             packet.data
         );
-        //(address sendercontrato, string memory mensajillo) = abi.decode(data.message, (address, string));
         bytes memory message_s = abi.encode(data.receiver.toAddress(0), data.message); //aqui mandaria mensajillo en vez de data.message 
         
-        //en el momento en el que la Blockchain 2 recibe un string, se invoca a cacneacall,
-        //funcion provisional que simplifica el proceso de volver a invocar
-        //la funcion de envio en caso de que haya recibido un codigo correcto
-        //aqui hard-coded como "cacnea"
-
-        string memory respuesta = _cacneacall(message_s);
+        //en el momento en el que la Blockchain 2 recibe un string, se invoca a gavincall,
+        //funcion que simplifica el proceso de volver a invocar
+        //la funcion de envio a la cadena solicitante de manera automatica
+        //en caso de que haya recibido un codigo correcto
+        string memory respuesta = _gavincall(message_s);
         
         bool buleano = false;
 
-        if(keccak256(abi.encodePacked((respuesta))) == keccak256(abi.encodePacked(("cacturne")))){
+        if(keccak256(abi.encodePacked((respuesta))) == keccak256(abi.encodePacked(("ok")))){
             buleano = true;
         }else{
             buleano = true;
         }
         return(_newAcknowledgement(buleano));
-            //_newAcknowledgement(_cacneacall(data.receiver.toAddress(0), data.message));
     }
 
     function onAcknowledgementPacket(
@@ -305,9 +296,6 @@ contract SCData is IIBCModule {
     //El enpaquetado se hace en bytes, la libreria ya la modificamos en el 
     //"paso anterior" de int a string para que cuente los saltos a dar para 
     //desenpaquetar correctamente. Es Packetmssg.sol, en ../lib
-
-    //No tienes que preocuparte por canales ni puertos, usamos los 
-    //de serie de YUI original, son muchas librerias y mejor no tocarlo
     function _sendPacket(
         MiniMessagePacketData.Data memory data, 
         string memory sourcePort,
@@ -373,12 +361,3 @@ contract SCData is IIBCModule {
     }
 }
 
-
-        //Nota Fun Fact:
-        //Cacnea es un Pokemon que evoluciona a Cacturne. Empece a usarlo como mi "to do" en
-        //el TFG para no confundirlo con la palabra todo (all) en espanol.
-        //Evoluciono a meme interno y ahora ya lo meto en todas partes.
-
-        //Aqui seria mas fitting poner un Pokemon que evoluciona por intercambio
-        //por eso de que pasa de una blockchain a otra, como Haunter a Gengar,
-        //pero es lo que hay. Cacnea.

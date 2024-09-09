@@ -6,6 +6,7 @@ module.exports = async (callback) => {
   const accounts = await web3.eth.getAccounts();
   const alice = accounts[1];
   const bob = accounts[2];
+  const aga = accounts[3];
 
   //Alice le da acceso a bob sobre el salt (certificate) usado para obtener el hash de Name+salt
   const certificatecode = "0xf73910ddb3e35a2db69926e7d422df45a52751d09bc99ceaed08ed2dd497930e";

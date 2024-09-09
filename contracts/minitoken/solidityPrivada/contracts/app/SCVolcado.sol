@@ -53,7 +53,7 @@ contract SCVolcado is IIBCModule {
     event AddCertificate(string certificate, address indexed holder);
     event Mint(address indexed to, string message);
 
-    event Cacneacall(address indexed to, bytes message);
+    event Gavincall(address indexed to, bytes message);
 
     event Transfer(address indexed from, address indexed to, string message);
 
@@ -142,7 +142,7 @@ contract SCVolcado is IIBCModule {
     }
 
 
-    /// Module callbacks ///
+    //recepcion de paquete
 
     function onRecvPacket(Packet.Data calldata packet, address relayer)
         external
@@ -160,7 +160,7 @@ contract SCVolcado is IIBCModule {
         bool respuesta = true;
 
         return(_newAcknowledgement(respuesta));
-            //_newAcknowledgement(_cacneacall(data.receiver.toAddress(0), data.message));
+            //_newAcknowledgement(_gavincall(data.receiver.toAddress(0), data.message));
     }
 
 
@@ -222,8 +222,7 @@ contract SCVolcado is IIBCModule {
     //"paso anterior" de int a string para que cuente los saltos a dar para 
     //desenpaquetar correctamente. Es Packetmssg.sol, en ../lib
 
-    //No tienes que preocuparte por canales ni puertos, usamos los 
-    //de serie de YUI original, son muchas librerias y mejor no tocarlo
+  
     function _sendPacket(
         MiniMessagePacketData.Data memory data, 
         string memory sourcePort,
@@ -281,13 +280,3 @@ contract SCVolcado is IIBCModule {
     }
 
 }
-
-
-        //Nota Fun Fact:
-        //Cacnea es un Pokemon que evoluciona a Cacturne. Empece a usarlo como mi "to do" en
-        //el TFG para no confundirlo con la palabra todo (all) en espanol.
-        //Evoluciono a meme interno y ahora ya lo meto en todas partes.
-
-        //Aqui seria mas fitting poner un Pokemon que evoluciona por intercambio
-        //por eso de que pasa de una blockchain a otra, como Haunter a Gengar,
-        //pero es lo que hay. Cacnea.

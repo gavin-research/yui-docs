@@ -6,7 +6,6 @@ import "solidity-bytes-utils/contracts/BytesLib.sol";
 import "../lib/PacketMssg.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
-//noivern
 contract SCAccess is IIBCModule {
     IBCHandler ibcHandler;
 
@@ -29,21 +28,25 @@ contract SCAccess is IIBCModule {
 
     //mapping codigo del certificado - holder
     mapping(string => address) private holders; 
+
     //mapping espejo del anterior para el getAccessList
-    //Si usamos array hay que iterar. Si recorremos el mapping anterior por valor para sacar key tambien.
-    //Iterar sobre algo de tamano desconocido puede consumir toda la memoria del bloque.
     mapping(address => string[]) public holdersEspejo;
     //mapping codigo - verifier - permisos de acceso
     mapping (string => mapping(address => Acceso)) public access;
-    //mapping provisional verifier - ultima superhash recibida
+    //mapping provisional verifier - ultima hash cifrada y salteada recibida 
     mapping(address => string) private _mensajin;
     //mapping usuario - nonce para firmas
     mapping(address => uint256) private nonce_sign; 
 
+//mappings necesarios para manejo sobre los tipos de acceso para cada verificador y certificado
+    //mapping direccion - tipo de acceso
     mapping(address => mapping(address => Acceso)) public accesslist;
+    //mapping holder - certificados de ese holder - tipos de acceso - verifiers para cada tipo de accceso
     mapping(address => mapping(string => mapping(Acceso => address[]))) public accesslista;
+    //mapping holder - entidades-certificado-tipo de acceso
     mapping(address => address[][][]) public userEntidades;
 
+//estructura de firma empleada para validar al usuario
     struct FirmaValidacion {
         bytes32 _hashCodeCert;
         bytes32 _r;
@@ -51,6 +54,7 @@ contract SCAccess is IIBCModule {
         uint8 _v;
     }
 
+//parametros para las conexiones del relayer
     struct RelayerParams {
         string  sourcePort;
         string  sourceChannel;
@@ -61,7 +65,7 @@ contract SCAccess is IIBCModule {
         owner = msg.sender;
 
         ibcHandler = ibcHandler_;
-
+        // se anaden parametros para facilitar los tests y pruebas
         //alice es holder de cert1 Cheddar
         holders["0xf73910ddb3e35a2db69926e7d422df45a52751d09bc99ceaed08ed2dd497930e"]=
         0xcBED645B1C1a6254f1149Df51d3591c6B3803007;
@@ -77,7 +81,6 @@ contract SCAccess is IIBCModule {
 
 
         //espejo del anterior con lista de certificados que posee
-        //CADA VEZ QUE SE VUELQUE LA INFORMACION VA A ESTAR DUPLICADA 
         holdersEspejo[0xcBED645B1C1a6254f1149Df51d3591c6B3803007]=
         ["0xf73910ddb3e35a2db69926e7d422df45a52751d09bc99ceaed08ed2dd497930e",
         "0x66de0b546355b8dc6b244662365b8f75b20bddb2341fbd313a8492556d78c11e"];
@@ -131,7 +134,7 @@ contract SCAccess is IIBCModule {
 
     event Mint(address indexed to, string message);
 
-    event Cacneacall(address indexed to, bytes message);
+    event Gavincall(address indexed to, bytes message);
 
     event Transfer(address indexed from, address indexed to, string message);
 
@@ -139,7 +142,6 @@ contract SCAccess is IIBCModule {
 
     event NonceSign(uint256 nonce);
 
-//cacnea borrar, es pa pruebas
     event EventoCacnea(bytes32 firmaHashCode, bytes32 abiFirmaHashCode, bytes noncebytes,uint256 nonce);
 
     event SendTransfer(
@@ -169,7 +171,8 @@ contract SCAccess is IIBCModule {
         return nonce_sign[user];
     }
 
-    //
+    //Crea una lista de verificadores con diferentes tipos de acceso sobre los certificados
+    //poseidos por holder.
     function getAccessList(address holder) public{
         string[] storage certificates = holdersEspejo[holder];
         
@@ -192,6 +195,7 @@ contract SCAccess is IIBCModule {
         
     }
 
+//Devuelve las entidades a las que el holder ha dado permiso de acceso y a que certificados.
     function getEntidades(address holder, FirmaValidacion calldata firma) public view returns (address[][][] memory) {
         address signer = _getSigner(firma);
         require(firma._hashCodeCert == keccak256(abi.encodePacked(Strings.toString(nonce_sign[signer]))), "Invalid signer");
@@ -201,7 +205,8 @@ contract SCAccess is IIBCModule {
         return userEntidades[holder];
     }
 
-
+//Permite al usuario, tras verificarse con su firma, modificar el tipo de acceso accessvalue que ha dado a
+// un verificador entity sobre un certificado certificate
      function modifyAccess(
         address entity,
         string memory certificate,
@@ -232,7 +237,7 @@ contract SCAccess is IIBCModule {
                     } 
                 }
             }
-        //ya borrado el valor anterior, se anade al mapping accesslsita la nueva informacion   
+        //ya borrado el valor anterior, se anade al mapping accesslista la nueva informacion   
         accesslista[signer][certificate][accessvalue].push(entity);
 
         emit ModifyAccess(
@@ -241,7 +246,7 @@ contract SCAccess is IIBCModule {
             accessvalue);
     }
 
-
+//funcion para verificar la firma del usuario
      function _getSigner(FirmaValidacion memory firma) internal pure returns (address) {
         bytes memory prefix = "\x19Ethereum Signed Message:\n32";
         bytes32 prefixedHashMessage = keccak256(abi.encodePacked(prefix, firma._hashCodeCert));
@@ -250,6 +255,7 @@ contract SCAccess is IIBCModule {
         return signer;
     }
 
+//funcion para enviar un dato message a la otra cadena mediante el relayer
     function sendTransfer(
         string memory message,
         address receiver,
@@ -317,12 +323,16 @@ contract SCAccess is IIBCModule {
 
     //funcion que recibe un string, y en caso de que sea el esperado, ejecuta la funcion de envio
     //con el valor asociado
-    function _cacneacall(bytes memory _mssg) internal returns (bool) {
+    function _gavincall(bytes memory _mssg) internal returns (bool) {
         // entei, que pasa si recibe de scstorage-scdata (address account, bytes memory )
         (address account, bytes memory message_s) = abi.decode(_mssg, (address, bytes));
         string memory data_s = string(message_s);
         
-        //new! entei
+        //la funcion detecta si el origen del dato es de un usuario o de SCVolcado (y por lo tanto, un
+        //dato nuevo). Si el dato hexadecimal comienza por P, es un dato de SCVolcado, y 
+        //por lo tanto, se anade a la lista de codigos registrados.
+        //En caso contrario, es un dato solicitado por un usuario recibido de SCData, y se envia
+        //al verificador
         bytes memory strBytes = bytes(data_s);
         if (strBytes[0] == 'P') {
             bytes memory result = new bytes(strBytes.length - 1);
@@ -349,12 +359,12 @@ contract SCAccess is IIBCModule {
         }
         
         }
-        emit Cacneacall(account, message_s);
+        emit Gavincall(account, message_s);
         return true; //este return esta para comprobaciones, podria devolver un true y ya o nada
     }
 
 
-    function _transfer( //cacnea
+    function _transfer( 
         address from,
         address to,
         string memory message
@@ -383,15 +393,15 @@ contract SCAccess is IIBCModule {
         //(address sendercontrato, string memory mensajillo) = abi.decode(data.message, (address, string));
         bytes memory message_s = abi.encode(data.receiver.toAddress(0), data.message); //aqui mandaria mensajillo en vez de data.message 
         
-        //en el momento en el que la Blockchain 2 recibe un string, se invoca a cacneacall,
+        //en el momento en el que la Blockchain 2 recibe un string, se invoca a gavincall,
         //funcion provisional que simplifica el proceso de volver a invocar
         //la funcion de envio en caso de que haya recibido un codigo correcto
         //aqui hard-coded como "cacnea"
 
-        bool respuesta = _cacneacall(message_s);
+        bool respuesta = _gavincall(message_s);
 
         return(_newAcknowledgement(respuesta));
-            //_newAcknowledgement(_cacneacall(data.receiver.toAddress(0), data.message));
+            //_newAcknowledgement(_gavincall(data.receiver.toAddress(0), data.message));
     }
 
 
@@ -519,13 +529,3 @@ contract SCAccess is IIBCModule {
         require(_mint(data.sender.toAddress(0), data.message));
     }
 }
-
-
-        //Nota Fun Fact:
-        //Cacnea es un Pokemon que evoluciona a Cacturne. Empece a usarlo como mi "to do" en
-        //el TFG para no confundirlo con la palabra todo (all) en espanol.
-        //Evoluciono a meme interno y ahora ya lo meto en todas partes.
-
-        //Aqui seria mas fitting poner un Pokemon que evoluciona por intercambio
-        //por eso de que pasa de una blockchain a otra, como Haunter a Gengar,
-        //pero es lo que hay. Cacnea.

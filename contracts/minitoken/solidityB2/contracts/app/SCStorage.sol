@@ -32,7 +32,7 @@ contract SCStorage is IIBCModule {
     event StoreCertificate(string certificate, bytes code);
     event Mint(address indexed to, string message);
 
-    event Cacneacall(address indexed to, bytes message);
+    event Gavincall(address indexed to, bytes message);
 
     event Transfer(address indexed from, address indexed to, string message);
 
@@ -115,7 +115,7 @@ contract SCStorage is IIBCModule {
     }
 
 
-    /// Module callbacks ///
+    //funcion de recepcion del paquete de datos, desempaqueta la informacion
 
     function onRecvPacket(Packet.Data calldata packet, address relayer)
         external
@@ -127,7 +127,6 @@ contract SCStorage is IIBCModule {
         MiniMessagePacketData.Data memory data = MiniMessagePacketData.decode(
             packet.data
         );
-        //(address sendercontrato, string memory mensajillo) = abi.decode(data.message, (address, string));
         bytes memory message_s = abi.encode(data.receiver.toAddress(0), data.message); 
         
         //Separar los dos strings, para almacenar el certificado y el codigo llamando a storeCertificate()
@@ -139,7 +138,6 @@ contract SCStorage is IIBCModule {
         bool respuesta = true;
 
         return(_newAcknowledgement(respuesta));
-            //_newAcknowledgement(_cacneacall(data.receiver.toAddress(0), data.message));
     }
 
 
@@ -201,8 +199,6 @@ contract SCStorage is IIBCModule {
     //"paso anterior" de int a string para que cuente los saltos a dar para 
     //desenpaquetar correctamente. Es Packetmssg.sol, en ../lib
 
-    //No tienes que preocuparte por canales ni puertos, usamos los 
-    //de serie de YUI original, son muchas librerias y mejor no tocarlo
     function _sendPacket(
         MiniMessagePacketData.Data memory data, 
         string memory sourcePort,
@@ -262,11 +258,3 @@ contract SCStorage is IIBCModule {
 }
 
 
-        //Nota Fun Fact:
-        //Cacnea es un Pokemon que evoluciona a Cacturne. Empece a usarlo como mi "to do" en
-        //el TFG para no confundirlo con la palabra todo (all) en espanol.
-        //Evoluciono a meme interno y ahora ya lo meto en todas partes.
-
-        //Aqui seria mas fitting poner un Pokemon que evoluciona por intercambio
-        //por eso de que pasa de una blockchain a otra, como Haunter a Gengar,
-        //pero es lo que hay. Cacnea.
