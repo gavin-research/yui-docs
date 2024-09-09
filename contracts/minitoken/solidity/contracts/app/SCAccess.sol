@@ -242,7 +242,6 @@ contract SCAccess is IIBCModule {
     }
 
     function modifyAccess(
-        address from,
         address entity,
         string memory certificate,
         FirmaValidacion calldata firma,
@@ -271,11 +270,16 @@ contract SCAccess is IIBCModule {
         ];
         for (uint j = 0; j < 4; j++) {
             Acceso acceso = tipo_de_acceso[j];
-            address[] memory entidad = accesslista[signer][certificate][acceso];
+            address[] storage entidad = accesslista[signer][certificate][
+                acceso
+            ];
 
             for (uint i = 0; i < entidad.length; i++) {
                 if (entidad[i] == entity) {
-                    delete entidad[i];
+                    for (uint k = i; k < entidad.length - 1; k++) {
+                        entidad[k] = entidad[k + 1];
+                    }
+                    entidad.pop();
                 }
             }
         }
