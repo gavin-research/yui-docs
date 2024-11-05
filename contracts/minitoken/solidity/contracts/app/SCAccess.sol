@@ -26,6 +26,9 @@ contract SCAccess is IIBCModule {
     address[][] public entidades1cert;
     address[][][] public entidades;
 
+   //mapping the issuers validos en el modelo, address -> nombre de la entidad issuer
+    mapping(address => string) private valid_issuers; 
+
     //mapping codigo del certificado - holder
     mapping(string => address) private holders; 
 
@@ -142,6 +145,8 @@ contract SCAccess is IIBCModule {
 
     event NonceSign(uint256 nonce);
 
+    event AddedValidIssuer(address issuerAddy, string issuerName);
+
     event EventoCacnea(bytes32 firmaHashCode, bytes32 abiFirmaHashCode, bytes noncebytes,uint256 nonce);
 
     event SendTransfer(
@@ -166,9 +171,21 @@ contract SCAccess is IIBCModule {
         _;
     }
 
+    //funcion que devuelve el nombre de una entidad issuer valida en el modelo dada su address
+    function getIssuer(address issuer) public view returns(string memory){
+        return valid_issuers[issuer];
+    }
 
     function getNonce(address user) public view returns (uint256){
         return nonce_sign[user];
+    }
+
+    function getHolderofCert(string memory cert) public view returns(address){
+        return holders[cert];
+    }
+
+    function getHoldersEspejo(address holder) public view returns(string[] memory){
+        return holdersEspejo[holder];
     }
 
     //Crea una lista de verificadores con diferentes tipos de acceso sobre los certificados
@@ -216,6 +233,7 @@ contract SCAccess is IIBCModule {
         address signer = _getSigner(firma);
         require(firma._hashCodeCert == keccak256(abi.encodePacked(Strings.toString(nonce_sign[signer]))), "Invalid signer");
         require(holders[certificate] == signer, "Invalid signer 2");
+        require(holders[certificate] != entity, "Holders cannot remove their own access to a certification");
 
         nonce_sign[signer] = nonce_sign[signer] + 1;
         //se anade al mapping access la nueva informacion
@@ -331,6 +349,8 @@ contract SCAccess is IIBCModule {
         //la funcion detecta si el origen del dato es de un usuario o de SCVolcado (y por lo tanto, un
         //dato nuevo). Si el dato hexadecimal comienza por P, es un dato de SCVolcado, y 
         //por lo tanto, se anade a la lista de codigos registrados.
+        //En caso de que el string comience con I0xI, se trata de un issuer nuevo anadido.
+        //En este caso, se incluye en el listado de issuers validos
         //En caso contrario, es un dato solicitado por un usuario recibido de SCData, y se envia
         //al verificador
         bytes memory strBytes = bytes(data_s);
@@ -349,6 +369,15 @@ contract SCAccess is IIBCModule {
             accesslista[account][newdata][Acceso.acceso_total].push(account);
            
 
+        }else if ((strBytes[0] == 'I')&&(strBytes[1] == '0')&&
+        (strBytes[2] == 'x')&&(strBytes[3] == 'I')){
+            bytes memory result = new bytes(strBytes.length - 4);
+            for (uint i = 4; i < strBytes.length; i++) {
+                result[i - 4] = strBytes[i];
+            }
+            string memory newdata = string(result); //el nombre del issuer sin el codigo I0xI
+            valid_issuers[account]= newdata;
+            
         }else{      
        
         if(keccak256(abi.encodePacked(data_s)) != keccak256(abi.encodePacked("FAILED"))){
@@ -396,8 +425,6 @@ contract SCAccess is IIBCModule {
         //en el momento en el que la Blockchain 2 recibe un string, se invoca a gavincall,
         //funcion provisional que simplifica el proceso de volver a invocar
         //la funcion de envio en caso de que haya recibido un codigo correcto
-        //aqui hard-coded como "cacnea"
-
         bool respuesta = _gavincall(message_s);
 
         return(_newAcknowledgement(respuesta));
