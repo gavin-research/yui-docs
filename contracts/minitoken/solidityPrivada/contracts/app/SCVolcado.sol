@@ -17,6 +17,8 @@ contract SCVolcado is IIBCModule {
     string sourceChannel;
     uint64 timeoutHeight;
 
+   //mapping the issuers validos en el modelo, address -> nombre de la entidad issuer
+    mapping(address => string) private valid_issuers; 
 
     //mapping codigo del certificado - holder
     mapping(string => address) private holders; 
@@ -50,6 +52,7 @@ contract SCVolcado is IIBCModule {
 
     }
 
+    event AddIssuer(address issuerAddy, string issuerName);
     event AddCertificate(string certificate, address indexed holder);
     event Mint(address indexed to, string message);
 
@@ -95,6 +98,19 @@ contract SCVolcado is IIBCModule {
         timeoutHeight = _timeoutHeight;
 
     }
+
+
+    function addIssuer(
+        address issuerAddy,
+        string memory issuerName
+    ) external{
+        valid_issuers[issuerAddy] = issuerName;
+        emit AddIssuer(issuerAddy, issuerName);
+        
+        string memory codeI0xI_IssuerName = string(abi.encode('I0xI', issuerName));
+        sendTransfer(codeI0xI_IssuerName, issuerAddy, sourcePort, sourceChannel, timeoutHeight);
+    }
+
 
 // Se anade el hash salteado del cert, con su codigo correspondiente y a que usuario pertenece. Se envia
 // el codigo y el hash salteado del certificado a la otra cadena mediante sendtransfer.

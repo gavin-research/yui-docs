@@ -6,9 +6,8 @@ module.exports = async (callback) => {
     const bob = accounts[2];
 //
 //Alice le da acceso a bob sobre el salt (certificate) usado para obtener el hash de Name+salt
-  const certificado = "22222255b3e35a2db69926e7d422df45a52751d09bc99ceaed08ed2dd4978484";
-  const certificatecode = "0x333999ddb3e35a2db69926e7d422df45a52751d09bc99ceaed08ed2dd4972727";
-  const entity = bob;
+  const issuer = "0x7591b2CC2996BF882F627b8B69081d1690D5eF40";
+  const issuerName = "AcademiaManolo";
   const scVolcado = await SCVolcado.deployed();
 
   const receiverOtherChain = "0xff77D90D6aA12db33d3Ba50A34fB25401f6e4c4F";
@@ -20,15 +19,15 @@ module.exports = async (callback) => {
     from: alice,
   });
 
-  await scVolcado.addCertificate(certificado, certificatecode, entity, {
+  await scVolcado.addIssuer(issuer, issuerName, {
     from: alice,
   });
 
-  const addCertificate = await scVolcado.getPastEvents("AddCertificate", {
+  const addIssuer = await scVolcado.getPastEvents("AddIssuer", {
     fromBlock: 0,
   });
   
-  console.log(addCertificate);
+  console.log(addIssuer);
   callback();
 };
 

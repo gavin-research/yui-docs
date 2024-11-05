@@ -33,6 +33,7 @@ contract SCStorage is IIBCModule {
     event Mint(address indexed to, string message);
 
     event Gavincall(address indexed to, bytes message);
+    event CalledData(string cert, bytes code, address holder);
 
     event Transfer(address indexed from, address indexed to, string message);
 
@@ -74,10 +75,22 @@ contract SCStorage is IIBCModule {
             holders[_certificate] = _holder;
             emit StoreCertificate(_certificate, _code);
 
-            (bool success, bytes memory data) = scdataaddr.call{
-                gas: 5000
-             }(abi.encodeWithSignature("receivenewcert(string,bytes,address)", 
+            (bool success, bytes memory data) = scdataaddr.call
+            (abi.encodeWithSignature("receivenewcert(string,bytes,address)", 
                                 _certificate, _code, _holder));
+
+             emit Response(success, data);
+             emit CalledData(_certificate,_code,_holder);
+    }
+
+    function storeIssuer(
+        address issuer,
+        string memory issuerName
+    ) internal {
+        //NOIVERn
+        (bool success, bytes memory data) = scdataaddr.call
+        (abi.encodeWithSignature("receivenewissuer(address, string)", 
+                                issuer, issuerName));
 
              emit Response(success, data);
     }
@@ -129,11 +142,23 @@ contract SCStorage is IIBCModule {
         );
         bytes memory message_s = abi.encode(data.receiver.toAddress(0), data.message); 
         
-        //Separar los dos strings, para almacenar el certificado y el codigo llamando a storeCertificate()
-        (string memory certificado, bytes memory code) = abi.decode(bytes(data.message), (string, bytes));
-       
-        //Almacena el certificado y el codigo y el holder
-        storeCertificate(certificado, code, data.receiver.toAddress(0));
+        bytes memory strBytes = bytes(data.message);
+
+        if ((strBytes[0] == 'I')&&(strBytes[1] == '0')&&
+        (strBytes[2] == 'x')&&(strBytes[3] == 'I')){
+            //si es un issuer...
+            storeIssuer(data.receiver.toAddress(0), data.message);
+
+
+        }else{
+            //si es un certificado...
+            //Separar los dos strings, para almacenar el certificado y el codigo llamando a storeCertificate()
+            (string memory certificado, bytes memory code) = abi.decode(bytes(data.message), (string, bytes));
+        
+            //Almacena el certificado y el codigo y el holder
+            storeCertificate(certificado, code, data.receiver.toAddress(0));
+        }
+
         
         bool respuesta = true;
 

@@ -11,6 +11,7 @@ contract SCData is IIBCModule {
     using BytesLib for *;
 
     address private owner;
+    uint256 noivern = 0;
 
     //mapping que asocia cada codigo a su hash salteado y cifrado
     mapping (bytes => string) public certificate;
@@ -34,6 +35,8 @@ contract SCData is IIBCModule {
 
 
     }
+
+    event Noivern(uint256 noivern);
 
     event Mint(address indexed to, string message);
 
@@ -134,6 +137,17 @@ contract SCData is IIBCModule {
     }
 
 
+    function getCertificate(bytes calldata _codigo) public returns(string memory){
+        noivern = noivern+1;
+        emit Noivern(noivern);
+        return certificate[_codigo];
+    }
+
+    function getNoivern() public  returns(uint256){
+        emit Noivern(noivern);
+        return noivern;
+    }
+
     
     //unused functions on this project burn, mint
     function mint(address account, string memory message) external onlyOwner {
@@ -168,8 +182,14 @@ contract SCData is IIBCModule {
 //blockchains privadas) con el prefijo "P0x".
     function receivenewcert(string memory _cert, bytes memory _code, address hold) external returns(bool){
         certificate[_code] = _cert;
-        string memory codestr = string(abi.encodePacked("P0x", _code));
+        string memory codestr = string(abi.encodePacked("P", _code));
         sendTransfer2(codestr, hold, "transfer", "channel-0", 0);
+
+        return true;
+    }
+
+    function receivenewissuer(address _issuer, string memory _issuerName) external returns(bool){
+        sendTransfer2(_issuerName, _issuer, "transfer", "channel-0", 0);
 
         return true;
     }

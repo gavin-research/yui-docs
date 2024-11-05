@@ -4,8 +4,8 @@ const SCAccess = artifacts.require("SCAccess");
 
 module.exports = async (callback) => {
   const accounts = await web3.eth.getAccounts();
-  const alice = accounts[1];
-  const bob = accounts[2];
+  //const alice = accounts[1];
+  const alice = accounts[2];
   const scAccess = await SCAccess.deployed();
 
   // get user nonce
@@ -45,5 +45,9 @@ module.exports = async (callback) => {
   await scAccess.getAccessList(alice);
   const entidades = await scAccess.getEntidades(alice, structFirma);
   console.log(entidades);
+
+  const anadidaVolcado = await scAccess.getHolderofCert("0x333999ddb3e35a2db69926e7d422df45a52751d09bc99ceaed08ed2dd4972727");
+  console.log(anadidaVolcado)
+
   callback();
 };
