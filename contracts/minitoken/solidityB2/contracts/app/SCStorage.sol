@@ -16,6 +16,8 @@ contract SCStorage is IIBCModule {
     mapping(string => address) private holders; 
     //mapping codigo - superhash
     mapping (bytes => string) public certificate;
+    //lista de issuers admitidos
+    mapping(address => string) public listValidIssuers;
 
     // direccion de scdata para call()
     address scdataaddr;
@@ -88,6 +90,7 @@ contract SCStorage is IIBCModule {
         string memory issuerName
     ) internal {
         //NOIVERn
+        listValidIssuers[issuer]=issuerName;
         (bool success, bytes memory data) = scdataaddr.call
         (abi.encodeWithSignature("receivenewissuer(address, string)", 
                                 issuer, issuerName));
@@ -153,10 +156,14 @@ contract SCStorage is IIBCModule {
         }else{
             //si es un certificado...
             //Separar los dos strings, para almacenar el certificado y el codigo llamando a storeCertificate()
-            (string memory certificado, bytes memory code) = abi.decode(bytes(data.message), (string, bytes));
+            (string memory certificado, bytes memory code, address issuer) = abi.decode(bytes(data.message), (string, bytes, address));
         
-            //Almacena el certificado y el codigo y el holder
-            storeCertificate(certificado, code, data.receiver.toAddress(0));
+            //comprobar que isssuer  esta registrado. si no lo esta no ejecuta el storecertificate y el certificado no se envia a scdata
+            if (bytes(listValidIssuers[issuer]).length != 0){
+                //Almacena el certificado y el codigo y el holder
+                storeCertificate(certificado, code, data.receiver.toAddress(0));
+            }
+
         }
 
         

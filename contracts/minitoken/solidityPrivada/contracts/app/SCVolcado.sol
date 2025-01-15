@@ -118,12 +118,13 @@ contract SCVolcado is IIBCModule {
     function addCertificate(
         string memory _certificate,
         bytes memory _code,
-        address _holder) external{
+        address _holder
+        ) external{
             certificate[_code] = _certificate;
             holders[_certificate] = _holder;
             emit AddCertificate(_certificate, _holder);
-
-            string memory mensaje = string(abi.encode(_certificate, _code));
+            //msg.sender el BAF del issuer 
+            string memory mensaje = string(abi.encode(_certificate, _code, msg.sender));
             
             sendTransfer(mensaje, _holder, sourcePort, sourceChannel, timeoutHeight);
             
