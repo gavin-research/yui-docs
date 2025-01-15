@@ -158,6 +158,12 @@ contract SCAccess is IIBCModule {
         string message
     );
 
+    event CertEntites(
+        address from,
+        string[] certsAddress,
+        address[][][] accessList
+    );
+    
     modifier onlyOwner() {
         require(msg.sender == owner, "MiniMessage: caller is not the owner");
         _;
@@ -213,12 +219,12 @@ contract SCAccess is IIBCModule {
     }
 
 //Devuelve las entidades a las que el holder ha dado permiso de acceso y a que certificados.
-    function getEntidades(address holder, FirmaValidacion calldata firma) public view returns (address[][][] memory) {
+    function getEntidades(address holder, FirmaValidacion calldata firma) public returns (address[][][] memory) {
         address signer = _getSigner(firma);
         require(firma._hashCodeCert == keccak256(abi.encodePacked(Strings.toString(nonce_sign[signer]))), "Invalid signer");
         require(holder == signer, "Invalid signer. Msg signer is not the user requested.");
 
-        
+        emit CertEntites(holder, holdersEspejo[holder], userEntidades[holder]);
         return userEntidades[holder];
     }
 
