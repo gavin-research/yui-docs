@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity ^0.8.9;
+pragma solidity ^0.8.12;
 
 import "@hyperledger-labs/yui-ibc-solidity/contracts/core/OwnableIBCHandler.sol";
 import "solidity-bytes-utils/contracts/BytesLib.sol";

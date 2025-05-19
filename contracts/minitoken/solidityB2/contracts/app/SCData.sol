@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity ^0.8.9;
+pragma solidity ^0.8.12;
 
 import "@hyperledger-labs/yui-ibc-solidity/contracts/core/OwnableIBCHandler.sol";
 import "solidity-bytes-utils/contracts/BytesLib.sol";
@@ -12,6 +12,7 @@ contract SCData is IIBCModule {
 
     address private owner;
     uint256 noivern = 0;
+
 
     //mapping que asocia cada codigo a su hash salteado y cifrado
     mapping (bytes => string) public certificate;
@@ -69,6 +70,8 @@ contract SCData is IIBCModule {
     }
 
 
+
+
     //La funcion aparece 2 veces (sendTransfer y sendTransfer2), 
     //una interna y otra externa, copiada para facilitar la visualizacion ahora mismo.
 
@@ -116,6 +119,7 @@ contract SCData is IIBCModule {
         string memory sourceChannel,
         uint64 timeoutHeight 
     ) internal {
+
         _sendPacket(
             MiniMessagePacketData.Data({
                 message: message, 

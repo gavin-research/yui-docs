@@ -48,6 +48,30 @@ module.exports = async (callback) => {
     _s: s,
     _v: v
   };
+
+
+  /*GAS check alg3 in GAVIN*/
+    //Initial account balance
+    const initial = await web3.eth.getBalance(bob);
+    console.log(`Initial: ${initial.toString()}`);
+
+    // Obtain gas used from the receipt
+    const receipt = await scaccess.sendTransfer(certificatecode, bob, params, structFirma , {
+      from: bob,
+    });
+    const gasUsed = receipt.receipt.gasUsed;
+    console.log(`GasUsed: ${receipt.receipt.gasUsed}`);
+
+    // Obtain gasPrice from the transaction
+    const tx = await web3.eth.getTransaction(receipt.tx);
+    const gasPrice = tx.gasPrice;
+    console.log(`GasPrice: ${tx.gasPrice}`);
+
+    // Final balance
+    const final = await web3.eth.getBalance(bob);
+    console.log(`Final: ${final.toString()}`);
+  /*END GAS CHECK*/
+      //cacnea with gas check this next lines will fail due to increased nonce in signature before another interaction:
   // bob solicita acceso para verificar el certificado cheddar
   await scaccess.sendTransfer(certificatecode, bob, params, structFirma , {
     from: bob,

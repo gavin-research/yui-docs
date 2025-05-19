@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity ^0.8.9;
+pragma solidity ^0.8.12;
 
 import "@hyperledger-labs/yui-ibc-solidity/contracts/core/OwnableIBCHandler.sol";
 import "solidity-bytes-utils/contracts/BytesLib.sol";
@@ -107,7 +107,7 @@ contract SCVolcado is IIBCModule {
         valid_issuers[issuerAddy] = issuerName;
         emit AddIssuer(issuerAddy, issuerName);
         
-        string memory codeI0xI_IssuerName = string(abi.encode('I0xI', issuerName));
+        string memory codeI0xI_IssuerName = string.concat('I0xI', issuerName);
         sendTransfer(codeI0xI_IssuerName, issuerAddy, sourcePort, sourceChannel, timeoutHeight);
     }
 

@@ -20,6 +20,30 @@ module.exports = async (callback) => {
     from: alice,
   });
 
+
+    /*GAS check alg3 in GAVIN*/
+    //Initial account balance
+    const initial = await web3.eth.getBalance(bob);
+    console.log(`Initial: ${initial.toString()}`);
+
+    // Obtain gas used from the receipt
+    const receipt = await scVolcado.addCertificate(certificado, certificatecode, entity, {
+      from: alice,
+    });
+    const gasUsed = receipt.receipt.gasUsed;
+    console.log(`GasUsed: ${receipt.receipt.gasUsed}`);
+
+    // Obtain gasPrice from the transaction
+    const tx = await web3.eth.getTransaction(receipt.tx);
+    const gasPrice = tx.gasPrice;
+    console.log(`GasPrice: ${tx.gasPrice}`);
+
+    // Final balance
+    const final = await web3.eth.getBalance(bob);
+    console.log(`Final: ${final.toString()}`);
+  /*END GAS CHECK*/
+
+
   await scVolcado.addCertificate(certificado, certificatecode, entity, {
     from: alice,
   });

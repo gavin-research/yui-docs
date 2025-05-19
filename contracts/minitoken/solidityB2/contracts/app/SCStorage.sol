@@ -1,10 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity ^0.8.9;
+pragma solidity ^0.8.12;
 
 import "@hyperledger-labs/yui-ibc-solidity/contracts/core/OwnableIBCHandler.sol";
 import "solidity-bytes-utils/contracts/BytesLib.sol";
 import "../lib/PacketMssg.sol";
 //noivern
+
+interface ISCData {
+        function receivenewissuer(address _issuer, string calldata _issuerName) external returns (bool);
+}
 contract SCStorage is IIBCModule {
     IBCHandler ibcHandler;
 
@@ -19,6 +23,9 @@ contract SCStorage is IIBCModule {
     //lista de issuers admitidos
     mapping(address => string) public listValidIssuers;
 
+    string public lastIssuerTest;
+
+
     // direccion de scdata para call()
     address scdataaddr;
  
@@ -30,6 +37,8 @@ contract SCStorage is IIBCModule {
         scdataaddr = 0xff77D90D6aA12db33d3Ba50A34fB25401f6e4c4F; //SCDATA ADDRESS
 
     }
+
+    
 
     event StoreCertificate(string certificate, bytes code);
     event Mint(address indexed to, string message);
@@ -52,6 +61,8 @@ contract SCStorage is IIBCModule {
 
     event Error(string error);
 
+    event LastIssuerTest(string lastIssuerTest);
+
     modifier onlyOwner() {
         require(msg.sender == owner, "MiniMessage: caller is not the owner");
         _;
@@ -65,6 +76,15 @@ contract SCStorage is IIBCModule {
         _;
     }
 
+
+function getlastIssuerTest() public view returns(string memory){
+    return lastIssuerTest;
+}
+
+
+function getIssuer(address _add) public view returns(string memory){
+    return listValidIssuers[_add];
+}
 
 // Se anade el hash salteado del cert, con su codigo correspondiente y a que usuario pertenece. Se envia
 // el codigo y el hash salteado del certificado a la otra cadena mediante sendtransfer.
@@ -91,11 +111,12 @@ contract SCStorage is IIBCModule {
     ) internal {
         //NOIVERn
         listValidIssuers[issuer]=issuerName;
-        (bool success, bytes memory data) = scdataaddr.call
-        (abi.encodeWithSignature("receivenewissuer(address, string)", 
-                                issuer, issuerName));
 
-             emit Response(success, data);
+        ISCData scdata = ISCData(scdataaddr);
+        bool success = scdata.receivenewissuer(issuer, issuerName);
+        //(bool success, bytes memory data) = scdataaddr.call{gas: 1000000}
+        //(abi.encodeWithSignature("receivenewissuer(address, string)", issuer, issuerName));
+
     }
 
     function getCertificate(bytes calldata _codigo) public view returns(string memory){
@@ -145,11 +166,14 @@ contract SCStorage is IIBCModule {
         );
         bytes memory message_s = abi.encode(data.receiver.toAddress(0), data.message); 
         
+        lastIssuerTest = data.message;
+        
         bytes memory strBytes = bytes(data.message);
 
         if ((strBytes[0] == 'I')&&(strBytes[1] == '0')&&
         (strBytes[2] == 'x')&&(strBytes[3] == 'I')){
             //si es un issuer...
+            
             storeIssuer(data.receiver.toAddress(0), data.message);
 
 

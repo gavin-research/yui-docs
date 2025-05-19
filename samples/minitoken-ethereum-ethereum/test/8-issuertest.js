@@ -4,9 +4,10 @@ module.exports = async (callback) => {
     const accounts = await web3.eth.getAccounts();
     const alice = accounts[1];
     const bob = accounts[2];
+    console.log(alice);
 //
 //Alice le da acceso a bob sobre el salt (certificate) usado para obtener el hash de Name+salt
-  const issuer = "0x7591b2CC2996BF882F627b8B69081d1690D5eF40";
+  const issuer = "0xcBED645B1C1a6254f1149Df51d3591c6B3803007";
   const issuerName = "AcademiaManolo";
   const scVolcado = await SCVolcado.deployed();
 
