@@ -20,6 +20,7 @@ module.exports = async (callback) => {
     from: alice,
   });
 
+  console.log("receiver: ", entity);
 
     /*GAS check alg3 in GAVIN*/
     //Initial account balance

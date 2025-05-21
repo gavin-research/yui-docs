@@ -15,7 +15,7 @@ contract SCData is IIBCModule {
 
 
     //mapping que asocia cada codigo a su hash salteado y cifrado
-    mapping (bytes => string) public certificate;
+    mapping (string => string) public certificate;
 
     //mapping verificador - ultima hash salteada cifrada recibida para la verificacion
     mapping(address => string) private _mensajin;
@@ -41,7 +41,7 @@ contract SCData is IIBCModule {
 
     event Mint(address indexed to, string message);
 
-    event Gavincall(address indexed to, bytes message);
+    event Gavincall(address indexed to, string message);
 
     event Burn(address indexed from, string message);
 
@@ -141,7 +141,7 @@ contract SCData is IIBCModule {
     }
 
 
-    function getCertificate(bytes calldata _codigo) public returns(string memory){
+    function getCertificate(string calldata _codigo) public returns(string memory){
         noivern = noivern+1;
         emit Noivern(noivern);
         return certificate[_codigo];
@@ -184,9 +184,9 @@ contract SCData is IIBCModule {
 //Para diferenciar en SCAccess el origen del dato y como tratarlo, se codifica
 //la informacion emitida aqui, originaria de SCStorage (y por lo tanto de SCVolcado en las
 //blockchains privadas) con el prefijo "P0x".
-    function receivenewcert(string memory _cert, bytes memory _code, address hold) external returns(bool){
+    function receivenewcert(string memory _cert, string memory _code, address hold) external returns(bool){
         certificate[_code] = _cert;
-        string memory codestr = string(abi.encodePacked("P", _code));
+        string memory codestr = string.concat("P", _code);
         sendTransfer2(codestr, hold, "transfer", "channel-0", 0);
 
         return true;
@@ -200,8 +200,7 @@ contract SCData is IIBCModule {
 
 //funcion de envio de la informacion automaticamente de vuelta a la cadena de acceso
     function _gavincall(bytes memory _mssg) internal returns (string memory) {
-       (address account, bytes memory message_s) = abi.decode(_mssg, (address, bytes));
-        string memory data_s = string(message_s);
+       (address account, string memory message_s) = abi.decode(_mssg, (address, string));
 
         _mensajin[account] = "sendtransfer completed";
             

@@ -23,7 +23,7 @@ contract SCVolcado is IIBCModule {
     //mapping codigo del certificado - holder
     mapping(string => address) private holders; 
     //mapping codigo - superhash
-    mapping (bytes => string) public certificate;
+    mapping (string => string) public certificate;
  
 
     constructor(IBCHandler ibcHandler_) public {
@@ -117,7 +117,7 @@ contract SCVolcado is IIBCModule {
 ////
     function addCertificate(
         string memory _certificate,
-        bytes memory _code,
+        string memory _code,
         address _holder
         ) external{
             certificate[_code] = _certificate;

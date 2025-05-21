@@ -137,7 +137,7 @@ contract SCAccess is IIBCModule {
 
     event Mint(address indexed to, string message);
 
-    event Gavincall(address indexed to, bytes message);
+    event Gavincall(address indexed to, string message);
 
     event Transfer(address indexed from, address indexed to, string message);
 
@@ -349,8 +349,7 @@ contract SCAccess is IIBCModule {
     //con el valor asociado
     function _gavincall(bytes memory _mssg) internal returns (bool) {
         // entei, que pasa si recibe de scstorage-scdata (address account, bytes memory )
-        (address account, bytes memory message_s) = abi.decode(_mssg, (address, bytes));
-        string memory data_s = string(message_s);
+        (address account, string memory message_s) = abi.decode(_mssg, (address, string));
         
         //la funcion detecta si el origen del dato es de un usuario o de SCVolcado (y por lo tanto, un
         //dato nuevo). Si el dato hexadecimal comienza por P, es un dato de SCVolcado, y 
@@ -359,7 +358,7 @@ contract SCAccess is IIBCModule {
         //En este caso, se incluye en el listado de issuers validos
         //En caso contrario, es un dato solicitado por un usuario recibido de SCData, y se envia
         //al verificador
-        bytes memory strBytes = bytes(data_s);
+        bytes memory strBytes = bytes(message_s);
         if (strBytes[0] == 'P') {
             bytes memory result = new bytes(strBytes.length - 1);
             for (uint i = 1; i < strBytes.length; i++) {
@@ -386,8 +385,8 @@ contract SCAccess is IIBCModule {
             
         }else{      
        
-        if(keccak256(abi.encodePacked(data_s)) != keccak256(abi.encodePacked("FAILED"))){
-           _mensajin[account] = data_s;
+        if(keccak256(abi.encodePacked(message_s)) != keccak256(abi.encodePacked("FAILED"))){
+           _mensajin[account] = message_s;
 
         }else{
            _mensajin[account] = "Permission = False";

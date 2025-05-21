@@ -8,6 +8,8 @@ import "../lib/PacketMssg.sol";
 
 interface ISCData {
         function receivenewissuer(address _issuer, string calldata _issuerName) external returns (bool);
+
+        function receivenewcert(string memory _cert, string memory _code, address hold) external returns(bool);
 }
 contract SCStorage is IIBCModule {
     IBCHandler ibcHandler;
@@ -19,7 +21,7 @@ contract SCStorage is IIBCModule {
     //mapping codigo del certificado - holder
     mapping(string => address) private holders; 
     //mapping codigo - superhash
-    mapping (bytes => string) public certificate;
+    mapping (string => string) public certificate;
     //lista de issuers admitidos
     mapping(address => string) public listValidIssuers;
 
@@ -28,6 +30,7 @@ contract SCStorage is IIBCModule {
 
     // direccion de scdata para call()
     address scdataaddr;
+    ISCData scdata;
  
 
     constructor(IBCHandler ibcHandler_) public {
@@ -35,16 +38,18 @@ contract SCStorage is IIBCModule {
 
         ibcHandler = ibcHandler_;
         scdataaddr = 0xff77D90D6aA12db33d3Ba50A34fB25401f6e4c4F; //SCDATA ADDRESS
+        scdata = ISCData(scdataaddr);
+
 
     }
 
     
 
-    event StoreCertificate(string certificate, bytes code);
+    event StoreCertificate(string certificate, string code);
     event Mint(address indexed to, string message);
 
     event Gavincall(address indexed to, bytes message);
-    event CalledData(string cert, bytes code, address holder);
+    event CalledData(string cert, string code, address holder);
 
     event Transfer(address indexed from, address indexed to, string message);
 
@@ -91,17 +96,14 @@ function getIssuer(address _add) public view returns(string memory){
 ////
     function storeCertificate(
         string memory _certificate,
-        bytes memory _code,
+        string memory _code,
         address _holder) internal{
             certificate[_code] = _certificate;
             holders[_certificate] = _holder;
             emit StoreCertificate(_certificate, _code);
 
-            (bool success, bytes memory data) = scdataaddr.call
-            (abi.encodeWithSignature("receivenewcert(string,bytes,address)", 
-                                _certificate, _code, _holder));
+            bool success = scdata.receivenewcert(_certificate, _code, _holder);
 
-             emit Response(success, data);
              emit CalledData(_certificate,_code,_holder);
     }
 
@@ -112,14 +114,13 @@ function getIssuer(address _add) public view returns(string memory){
         //NOIVERn
         listValidIssuers[issuer]=issuerName;
 
-        ISCData scdata = ISCData(scdataaddr);
         bool success = scdata.receivenewissuer(issuer, issuerName);
         //(bool success, bytes memory data) = scdataaddr.call{gas: 1000000}
         //(abi.encodeWithSignature("receivenewissuer(address, string)", issuer, issuerName));
 
     }
 
-    function getCertificate(bytes calldata _codigo) public view returns(string memory){
+    function getCertificate(string calldata _codigo) public view returns(string memory){
         return certificate[_codigo];
     }
 
@@ -180,7 +181,7 @@ function getIssuer(address _add) public view returns(string memory){
         }else{
             //si es un certificado...
             //Separar los dos strings, para almacenar el certificado y el codigo llamando a storeCertificate()
-            (string memory certificado, bytes memory code, address issuer) = abi.decode(bytes(data.message), (string, bytes, address));
+            (string memory certificado, string memory code, address issuer) = abi.decode(bytes(data.message), (string, string, address));
         
             //comprobar que isssuer  esta registrado. si no lo esta no ejecuta el storecertificate y el certificado no se envia a scdata
             if (bytes(listValidIssuers[issuer]).length != 0){
